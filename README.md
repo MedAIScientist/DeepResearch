@@ -1,0 +1,165 @@
+# Eye of Prometheus
+
+Eye of Prometheus is a command-line research companion that orchestrates Alibaba Cloud's **Tongyi DeepResearch 30B** agent for web-scale investigations and **xAI's grok-4-fast** model for long-form synthesis. The project wraps the DeepResearch inference stack with modern tooling, chunked query planning, and Markdown-first reporting so that complex research questions can be answered end-to-end from your terminal.
+
+## Key Capabilities
+
+- **Single-command deep research** — Run Tongyi DeepResearch through OpenRouter with automatic environment loading and safe defaults.
+- **Chunked investigation pipeline** — Break very large prompts into focused sub-questions, run them in parallel, then synthesize consolidated findings.
+- **Comprehensive English reporting** — Use grok-4-fast (2M-token context via OpenRouter) to generate multi-section executive reports with citations, tables, and forward-looking analysis.
+- **Offline synthesis utility** — Re-run synthesis on existing chunk outputs without repeating the costly research phase.
+- **Strict environment isolation** — `.env.example`, `.gitignore`, and `install.sh` keep API keys out of version control and guide new users through setup.
+
+## Project Layout
+
+```text
+Eye-of-Prometheus/
+├── install.sh                 # Bootstrap script (venv, requirements, .env provisioning)
+├── requirements.txt           # Python dependencies (mirrors the tested macOS stack)
+├── .env.example               # Template for API credentials
+├── scripts/
+│   └── ask.sh                 # CLI wrapper that activates the virtualenv and runs the tool
+├── src/
+│   └── eye_of_prometheus/
+│       ├── __init__.py        # Package init + env loader
+│       ├── config.py          # dotenv-enabled environment helpers
+│       ├── ask.py             # Interactive CLI entrypoint
+│       ├── chunked_research.py# Chunked research orchestration utilities
+│       ├── report_generator.py# grok-4-fast report synthesis logic
+│       ├── synthesize_only.py # Offline synthesis command
+│       └── DeepResearch/      # Alibaba Tongyi DeepResearch agent (vendor code, lightly patched)
+└── docs/
+    ├── CHUNKED_WORKFLOW.md    # Detailed description of the chunked research flow
+    └── REPORTING_PIPELINE.md  # Breakdown of the two-stage reporting architecture
+```
+
+## External Services & References
+
+| Provider | Purpose | Reference |
+|----------|---------|-----------|
+| [OpenRouter](https://openrouter.ai) | Unified gateway for Tongyi DeepResearch and grok-4-fast | [OpenRouter docs](https://openrouter.ai/docs) |
+| [Alibaba Tongyi DeepResearch 30B](https://openrouter.ai/api/v1/models/alibaba/tongyi-deepresearch-30b-a3b) | Autonomous research agent | [Technical report](https://arxiv.org/pdf/2510.24701) |
+| [xAI grok-4-fast](https://openrouter.ai/api/v1/models/x-ai/grok-4-fast) | Fast reasoning/synthesis model | [Model announcement](https://x.ai/) |
+| [Serper.dev](https://serper.dev) | Google Search/Scholar API wrapper | [Documentation](https://serper.dev/api-documentation) |
+| [Jina AI Reader](https://jina.ai/reader) | Web content extraction and Markdown conversion | [API docs](https://jina.ai/reader/) |
+
+## Prerequisites
+
+- macOS/Linux with Python 3.10+ (`python3 -m venv` required)
+- OpenRouter API key with access to Tongyi DeepResearch and grok-4-fast
+- Serper.dev API key for Google Search/Scholar
+- Jina AI Reader API key for webpage summarisation
+
+> ⚠️ **Costs & Rate Limits:** Tongyi DeepResearch and grok-4-fast both rely on billable OpenRouter calls. Large chunked runs and synthesis outputs may consume significant tokens; monitor your plan usage carefully.
+
+## Installation
+
+```bash
+git clone https://github.com/alicankiraz1/Eye-of-Prometheus.git
+cd Eye-of-Prometheus
+./install.sh
+```
+
+The installer will:
+
+1. Create `.venv` in the project root.
+2. Upgrade `pip` and install dependencies from `requirements.txt`.
+3. Prompt for OpenRouter, Serper, and Jina API keys.
+4. Generate `.env` with the provided credentials.
+
+At any time you can re-run the script to reinstall dependencies (existing `.env` files will be preserved).
+
+## Quick Start
+
+### Ask a Question
+
+```bash
+source .venv/bin/activate
+export PYTHONPATH="$(pwd)/src:$PYTHONPATH"
+python -m eye_of_prometheus.ask "What are the most significant AI safety milestones announced in 2024?"
+```
+
+Or, with the convenience wrapper:
+
+```bash
+./scripts/ask.sh "What are the most significant AI safety milestones announced in 2024?"
+```
+
+`./scripts/ask.sh` automatically sets `PYTHONPATH` to include `src/`, so you can invoke it without exporting the variable manually. When launching the module yourself, be sure `src/` is present on `PYTHONPATH` as shown above.
+
+The CLI will:
+
+1. Validate environment variables and show masked API keys.
+2. Create a JSONL dataset for the DeepResearch agent.
+3. Invoke `DeepResearch/inference/run_multi_react.py` via OpenRouter.
+4. Display the immediate research findings (in English, with tool citations).
+5. Save a Markdown research brief under `outputs/reports/`.
+6. Call grok-4-fast (2M context) to produce an extended executive report (~8k+ words) and store it in the same directory.
+
+### Chunked Research Mode
+
+For expansive topics, enable chunking so the system decomposes the question and synthesises the combined evidence:
+
+```bash
+./scripts/ask.sh --chunked "Map the global regulation landscape for frontier AI systems"
+```
+
+This mode:
+
+1. Uses OpenRouter `gpt-4o-mini` to propose 3–7 sub-questions.
+2. Runs DeepResearch sequentially for each chunk (new dataset per sub-question).
+3. Stores chunk results under `outputs/openrouter-api/...`.
+4. Calls grok-4-fast with all chunk summaries to craft a single integrated report.
+
+### Offline Synthesis
+
+If you already collected chunk outputs but want a new synthesis pass (e.g., with updated prompts), run:
+
+```bash
+python -m eye_of_prometheus.synthesize_only "Original research question here"
+```
+
+The utility locates the most recent chunk run, reloads its JSONL outputs, and regenerates an English synthesis report without re-hitting the search APIs.
+
+## Configuration & Environment Variables
+
+`src/eye_of_prometheus/config.py` automatically loads `.env` from the project root. The following keys are recognised:
+
+| Variable | Description |
+|----------|-------------|
+| `OPENROUTER_API_KEY` | Required. OpenRouter API key (must start with `sk-or-`). |
+| `SERPER_API_KEY` | Optional but recommended. Enables Google Search/Scholar tooling. |
+| `JINA_API_KEY` | Optional but recommended. Powers the `visit` tool for webpage extraction. |
+| `MODEL_PATH` | Leave empty when using OpenRouter (defaults to `openrouter-api`). |
+| `OUTPUT_PATH` | Override output directory; defaults to `<project>/outputs`. |
+| `TEMPERATURE`, `PRESENCE_PENALTY`, `MAX_WORKERS`, `ROLLOUT_COUNT` | Advanced agent tuning parameters. |
+| `OPENROUTER_MAX_RETRIES` | Upper bound for retry attempts when a call fails (default: 3). |
+| `OPENROUTER_TIMEOUT` | Per-request timeout in seconds for OpenRouter calls (default: 180). |
+| `OPENROUTER_RETRY_BASE` | Initial backoff delay in seconds for retry logic (default: 0.5). |
+| `OPENROUTER_RETRY_MAX_SLEEP` | Maximum sleep between retries in seconds (default: 6). |
+| `REPORT_MODEL` | Reporting model for synthesis (default: `x-ai/grok-4-fast`). |
+| `REPORT_CONTEXT_LIMIT` | Approximate total context window to target (default: 2000000 tokens). |
+| `REPORT_MAX_TOKENS` | Cap on output tokens for synthesis (default: 800000). |
+
+All Python modules access configuration via `eye_of_prometheus.get_env`, ensuring `.env` values are respected without manual wiring.
+
+## Docs & Deep Dives
+
+- `docs/CHUNKED_WORKFLOW.md` — How decomposition, per-chunk processing, and synthesis interlock.
+- `docs/REPORTING_PIPELINE.md` — Detailed explanation of the two-stage reporting flow (research vs. synthesis, prompt design, token budgeting).
+
+## Troubleshooting
+
+- **Missing dependencies**: Re-run `./install.sh` to recreate the virtual environment and reinstall packages.
+- **API errors**: Ensure your OpenRouter plan includes both Tongyi DeepResearch and grok-4-fast. Check account quotas.
+- **SERPER / Jina warnings**: The CLI allows execution without these keys, but search/visit calls will be skipped or degraded.
+- **Large outputs**: grok-4-fast supports an ~2M-token context; chunked synthesis dynamically caps requested tokens to stay under model limits.
+
+## Credits
+
+- **Alibaba-NLP** for [Tongyi DeepResearch](https://github.com/Alibaba-NLP/DeepResearch) (bundled under `src/eye_of_prometheus/DeepResearch`).
+- **xAI** for [grok-4-fast](https://x.ai/).
+- **OpenRouter**, **Serper.dev**, and **Jina AI** for their APIs.
+
+This repository repackages open-source components to provide an opinionated, English-first research workflow. Review upstream licenses before redistribution.
+
