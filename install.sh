@@ -19,11 +19,42 @@ error() {
   exit 1
 }
 
-PYTHON_BIN="${PYTHON_BIN:-python3}"
+PYTHON_BIN="${PYTHON_BIN:-}"
 
-if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
-  error "Python executable '$PYTHON_BIN' not found. Set PYTHON_BIN or install Python 3.10+."
+is_supported_python() {
+  "$1" -c 'import sys; sys.exit(0 if (sys.version_info.major == 3 and 10 <= sys.version_info.minor <= 13) else 1)' >/dev/null 2>&1
+}
+
+discover_python() {
+  local candidates=("$@")
+  for candidate in "${candidates[@]}"; do
+    if command -v "$candidate" >/dev/null 2>&1 && is_supported_python "$candidate"; then
+      echo "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
+if [ -n "$PYTHON_BIN" ]; then
+  if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+    error "Python executable '$PYTHON_BIN' not found. Set PYTHON_BIN or install Python 3.10–3.13."
+  fi
+  if ! is_supported_python "$PYTHON_BIN"; then
+    warn "Specified PYTHON_BIN='$PYTHON_BIN' is not Python 3.10–3.13."
+    warn "Attempting to locate a supported interpreter automatically..."
+    PYTHON_BIN=""
+  fi
 fi
+
+if [ -z "$PYTHON_BIN" ]; then
+  PYTHON_BIN="$(discover_python python3.11 python3.12 python3.13 python3.10 python3)"
+  if [ -z "$PYTHON_BIN" ]; then
+    error "No supported Python interpreter (3.10–3.13) found. Install e.g. python3.11 and rerun."
+  fi
+fi
+
+info "Using Python interpreter: $PYTHON_BIN ($("$PYTHON_BIN" -c 'import sys; print(".".join(map(str, sys.version_info[:3])))'))"
 
 info "Creating virtual environment at $VENV_PATH"
 "$PYTHON_BIN" -m venv "$VENV_PATH"

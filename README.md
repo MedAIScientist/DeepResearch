@@ -49,7 +49,7 @@ Eye-of-Prometheus/
 
 ## Prerequisites
 
-- macOS/Linux with Python 3.10+ (`python3 -m venv` required)
+- macOS/Linux with Python 3.10–3.13 (`python3 -m venv` required)
 - OpenRouter API key with access to Tongyi DeepResearch and grok-4-fast
 - Serper.dev API key for Google Search/Scholar
 - Jina AI Reader API key for webpage summarisation
