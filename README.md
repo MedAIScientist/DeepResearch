@@ -2,6 +2,10 @@
 
 Eye of Prometheus is a command-line research companion that orchestrates Alibaba Cloud's **Tongyi DeepResearch 30B** agent for web-scale investigations and **xAI's grok-4-fast** model for long-form synthesis. The project wraps the DeepResearch inference stack with modern tooling, chunked query planning, and Markdown-first reporting so that complex research questions can be answered end-to-end from your terminal.
 
+<div align="center">
+<img src="https://user-images.githubusercontent.com/74038190/212257454-16e3712e-945a-4ca2-b238-408ad0bf87e6.gif" width="100"><img src="https://user-images.githubusercontent.com/74038190/212257472-08e52665-c503-4bd9-aa20-f5a4dae769b5.gif" width="100">
+
+
 ## Key Capabilities
 
 - **Single-command deep research** — Run Tongyi DeepResearch through OpenRouter with automatic environment loading and safe defaults.
