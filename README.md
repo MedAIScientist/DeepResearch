@@ -3,8 +3,8 @@
 Eye of Prometheus is a command-line research companion that orchestrates Alibaba Cloud's **Tongyi DeepResearch 30B** agent for web-scale investigations and **xAI's grok-4-fast** model for long-form synthesis. The project wraps the DeepResearch inference stack with modern tooling, chunked query planning, and Markdown-first reporting so that complex research questions can be answered end-to-end from your terminal.
 
 <div align="center">
-<img src="https://github.com/alicankiraz1/Eye-of-Prometheus/blob/main/PoC.gif" width="400">
-
+<img src="https://github.com/alicankiraz1/Eye-of-Prometheus/blob/main/PoC.gif" width="800">
+</div>
 
 ## Key Capabilities
 
