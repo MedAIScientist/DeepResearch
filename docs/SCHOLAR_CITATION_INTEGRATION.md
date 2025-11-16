@@ -350,7 +350,7 @@ bibliography = citation_manager.generate_bibliography(CitationStyle.APA)
 The Citation Manager integrates with the Academic Report Generator:
 
 ```python
-from src.gazzali.academic_report_generator import AcademicReportGenerator
+from src.gazzali.report_generator import AcademicReportGenerator
 
 # Create report generator with citation manager
 report_generator = AcademicReportGenerator(

@@ -39,7 +39,7 @@ AcademicReport Object
 The main class that orchestrates report generation.
 
 ```python
-from gazzali.academic_report_generator import AcademicReportGenerator
+from gazzali.report_generator import AcademicReportGenerator
 from gazzali.academic_config import AcademicConfig
 from gazzali.citation_manager import CitationManager
 
@@ -349,7 +349,7 @@ Features:
 For quick report generation:
 
 ```python
-from gazzali.academic_report_generator import generate_academic_report
+from gazzali.report_generator import generate_academic_report
 
 report = generate_academic_report(
     question="What are the effects of climate change?",
@@ -463,8 +463,8 @@ citation_manager.export_ris("references.ris")
 ```python
 from gazzali.academic_config import AcademicConfig
 from gazzali.citation_manager import CitationManager
-from gazzali.academic_report_generator import AcademicReportGenerator
-from gazzali.report_generator import ResearchMetadata
+from gazzali.report_generator import AcademicReportGenerator
+from gazzali.report_models import ResearchMetadata
 
 # 1. Configure
 config = AcademicConfig.from_env()

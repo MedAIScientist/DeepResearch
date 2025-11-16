@@ -22,7 +22,7 @@ from collections import OrderedDict
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from gazzali.report_generator import (
+from gazzali.report_models import (
     AcademicReport,
     ResearchMetadata,
     create_empty_report,

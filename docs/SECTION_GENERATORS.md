@@ -293,7 +293,7 @@ formatted = generator._format_citations(malformed_content)
 ### Example 1: Generate Abstract from Full Report
 
 ```python
-from gazzali.academic_report_generator import AcademicReportGenerator
+from gazzali.report_generator import AcademicReportGenerator
 from gazzali.academic_config import AcademicConfig
 from gazzali.citation_manager import CitationManager
 

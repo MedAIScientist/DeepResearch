@@ -457,7 +457,7 @@ Climate change represents...
 
 **Usage**:
 ```python
-from gazzali.academic_report_generator import generate_academic_report
+from gazzali.report_generator import generate_academic_report
 
 report = generate_academic_report(...)
 report.save("output.tex", format="latex")
@@ -578,7 +578,7 @@ Gazzali Research validates report structure to ensure compliance:
 ### Validation Example:
 
 ```python
-from gazzali.academic_report_generator import AcademicReportGenerator
+from gazzali.report_generator import AcademicReportGenerator
 
 generator = AcademicReportGenerator(config, citation_manager)
 report = generator.generate_report(...)
@@ -687,7 +687,7 @@ python -m gazzali.ask \
 ```python
 from gazzali.academic_config import AcademicConfig, OutputFormat, CitationStyle
 from gazzali.citation_manager import CitationManager
-from gazzali.academic_report_generator import generate_academic_report
+from gazzali.report_generator import generate_academic_report
 
 # Configure for literature review
 config = AcademicConfig(

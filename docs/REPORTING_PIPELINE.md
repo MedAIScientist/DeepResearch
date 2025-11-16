@@ -6,7 +6,7 @@ This document explains the architecture and workflow of the academic report gene
 
 The report generation system is split into two main modules with clear separation of concerns:
 
-### 1. `report_generator.py` - Data Models & Formatting
+### 1. `report_models.py` - Data Models & Formatting
 
 **Purpose**: Defines the structure of academic reports and how they are formatted for output.
 
@@ -22,7 +22,7 @@ The report generation system is split into two main modules with clear separatio
 
 **Think of it as**: The "container" and "formatter" - it holds the report data and knows how to display it.
 
-### 2. `academic_report_generator.py` - Generation Logic
+### 2. `report_generator.py` - Generation Logic
 
 **Purpose**: Orchestrates the process of generating report content using AI models.
 
@@ -37,6 +37,8 @@ The report generation system is split into two main modules with clear separatio
 
 **Think of it as**: The "factory" - it creates and populates the report container.
 
+**Note**: This was previously named `academic_report_generator.py` but has been renamed to `report_generator.py` for clarity.
+
 ## Data Flow
 
 ```
@@ -49,7 +51,7 @@ The report generation system is split into two main modules with clear separatio
                      │
                      ▼
 ┌─────────────────────────────────────────────────────────────┐
-│ 2. AcademicReportGenerator (academic_report_generator.py)   │
+│ 2. AcademicReportGenerator (report_generator.py)            │
 │    ┌─────────────────────────────────────────────────────┐  │
 │    │ a. Prepare synthesis prompt                         │  │
 │    │    - Load academic writing guidelines               │  │
@@ -76,7 +78,7 @@ The report generation system is split into two main modules with clear separatio
                      │
                      ▼
 ┌─────────────────────────────────────────────────────────────┐
-│ 3. AcademicReport (report_generator.py)                     │
+│ 3. AcademicReport (report_models.py)                        │
 │    ┌─────────────────────────────────────────────────────┐  │
 │    │ Report object created with:                         │  │
 │    │ - Title                                             │  │
@@ -91,7 +93,7 @@ The report generation system is split into two main modules with clear separatio
                      │
                      ▼
 ┌─────────────────────────────────────────────────────────────┐
-│ 4. Output (report_generator.py methods)                     │
+│ 4. Output (report_models.py methods)                        │
 │    ┌──────────────┬──────────────┬──────────────┐          │
 │    │ to_markdown()│  to_latex()  │    save()    │          │
 │    │              │              │              │          │
@@ -108,7 +110,7 @@ The report generation system is split into two main modules with clear separatio
 ```python
 from gazzali.academic_config import AcademicConfig, CitationStyle, OutputFormat
 from gazzali.citation_manager import CitationManager
-from gazzali.academic_report_generator import AcademicReportGenerator
+from gazzali.report_generator import AcademicReportGenerator
 
 # 1. Configure academic settings
 config = AcademicConfig(
@@ -139,7 +141,7 @@ report.save("climate_report.tex", format="latex")
 ### Using the Convenience Function
 
 ```python
-from gazzali.academic_report_generator import generate_academic_report
+from gazzali.report_generator import generate_academic_report
 
 # One-line generation with defaults
 report = generate_academic_report(
@@ -153,7 +155,7 @@ report.save("report.md")
 
 ## Module Responsibilities
 
-### `report_generator.py` is responsible for:
+### `report_models.py` is responsible for:
 
 ✅ Defining report structure (data models)  
 ✅ Storing report content (sections, bibliography, metadata)  
@@ -165,7 +167,7 @@ report.save("report.md")
 ❌ NOT responsible for calling AI models  
 ❌ NOT responsible for parsing AI responses  
 
-### `academic_report_generator.py` is responsible for:
+### `report_generator.py` is responsible for:
 
 ✅ Orchestrating report generation workflow  
 ✅ Calling synthesis models with academic prompts  
@@ -205,7 +207,7 @@ report.save("report.md")
 ### Creating an Empty Report
 
 ```python
-from gazzali.report_generator import create_empty_report
+from gazzali.report_models import create_empty_report
 from gazzali.academic_config import AcademicConfig
 
 config = AcademicConfig(output_format="paper")
@@ -256,13 +258,13 @@ else:
 
 ```
 src/gazzali/
-├── report_generator.py              # DATA MODELS & FORMATTING
+├── report_models.py                 # DATA MODELS & FORMATTING
 │   ├── AcademicReport (class)
 │   ├── ResearchMetadata (class)
 │   ├── Section constants
 │   └── create_empty_report()
 │
-├── academic_report_generator.py     # GENERATION LOGIC
+├── report_generator.py              # GENERATION LOGIC
 │   ├── AcademicReportGenerator (class)
 │   └── generate_academic_report()
 │
@@ -274,7 +276,7 @@ src/gazzali/
 
 ## Summary
 
-- **`report_generator.py`** = "What a report IS" (structure and formatting)
-- **`academic_report_generator.py`** = "How to CREATE a report" (generation logic)
+- **`report_models.py`** = "What a report IS" (structure and formatting)
+- **`report_generator.py`** = "How to CREATE a report" (generation logic)
 
-Both work together but have distinct, non-overlapping responsibilities. The naming could be clearer (e.g., `report_models.py` vs `report_generator.py`), but the current structure follows good software engineering principles.
+Both work together but have distinct, non-overlapping responsibilities. The files have been renamed from their original names (`report_generator.py` → `report_models.py` and `academic_report_generator.py` → `report_generator.py`) to make their purposes clearer.
