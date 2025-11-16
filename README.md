@@ -117,6 +117,42 @@ The academic mode provides:
 - **Structured sections** — Abstract, Introduction, Literature Review, Methodology, etc.
 - **Discipline-specific conventions** — Tailored terminology and writing style for STEM, social sciences, humanities, or medical fields
 - **Bibliography export** — Generate .bib files for reference managers
+- **Workflow templates** — Preset configurations for common research tasks (literature reviews, systematic reviews, etc.)
+
+### Workflow Templates
+
+Gazzali provides preset workflow templates optimized for common academic research tasks:
+
+```bash
+# List available workflows
+./scripts/gazzali.sh --list-workflows
+
+# Use a workflow template
+./scripts/gazzali.sh --academic --workflow literature_review \
+    "What are the current approaches to explainable AI in healthcare?"
+
+# Systematic review with medical discipline
+./scripts/gazzali.sh --academic --workflow systematic_review --discipline medical \
+    "Effectiveness of cognitive behavioral therapy for anxiety disorders"
+
+# Save custom workflow for reuse
+./scripts/gazzali.sh --academic --output-format review --discipline stem \
+    --word-count 6000 --citation-style ieee \
+    --save-workflow my_stem_review \
+    "Your question"
+
+# Load custom workflow
+./scripts/gazzali.sh --academic --load-workflow my_stem_review \
+    "Another research question"
+```
+
+Available workflow templates:
+- **Literature Review** — Comprehensive synthesis of existing research (6,000 words, 10+ sources)
+- **Systematic Review** — Protocol-driven review with quality assessment (8,000 words, 15+ sources)
+- **Methodology Comparison** — Comparative analysis of research methods (7,000 words, 12+ sources)
+- **Theoretical Analysis** — Deep dive into theoretical frameworks (8,000 words, 15+ sources)
+
+For detailed workflow documentation, see [docs/WORKFLOW_CONFIGURATION.md](docs/WORKFLOW_CONFIGURATION.md).
 
 ### Legacy CLI (ask.py)
 
@@ -180,6 +216,12 @@ python -m gazzali.gazzali [OPTIONS] [QUESTION]
 - `--refine` — Refine research question using FINER criteria
 - `--word-count COUNT` — Target word count (default: 8000)
 - `--export-bib` — Export bibliography to .bib file
+
+**Workflow Template Options:**
+- `--workflow {literature_review,systematic_review,methodology_comparison,theoretical_analysis}` — Use preset workflow template
+- `--list-workflows` — List available workflow templates and exit
+- `--save-workflow NAME` — Save current configuration as custom workflow
+- `--load-workflow NAME` — Load custom workflow configuration
 
 **General Options:**
 - `--chunked` — Enable chunked research mode

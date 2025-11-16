@@ -20,6 +20,13 @@ from typing import Optional, Dict, Any
 from .config import get_env
 from .academic_config import AcademicConfig
 from .chunked_research import run_chunked_research, synthesize_results
+from .workflows.templates import (
+    WorkflowTemplate,
+    WorkflowType,
+    get_workflow_template,
+    get_workflow_by_name,
+    list_available_workflows,
+)
 
 
 # Color codes for terminal output
@@ -91,11 +98,138 @@ def check_environment():
     print()
 
 
-def display_academic_config(config: AcademicConfig):
+def list_workflows_and_exit():
+    """List available workflow templates and exit"""
+    print(f"\n{Colors.BOLD}📋 Available Workflow Templates{Colors.ENDC}\n")
+    
+    workflows = list_available_workflows()
+    for workflow in workflows:
+        print(f"{Colors.OKCYAN}▸ {workflow['name']}{Colors.ENDC}")
+        print(f"  Type: {workflow['type']}")
+        print(f"  Description: {workflow['description']}")
+        print(f"  Word Count: {workflow['word_count_range']} words")
+        print(f"  Min Sources: {workflow['min_sources']} peer-reviewed\n")
+    
+    print(f"{Colors.BOLD}Usage:{Colors.ENDC}")
+    print(f"  python -m gazzali.gazzali --academic --workflow <type> \"Your question\"\n")
+    
+    sys.exit(0)
+
+
+def load_workflow_template(workflow_name: str) -> Optional[WorkflowTemplate]:
+    """
+    Load a workflow template by name.
+    
+    Args:
+        workflow_name: Name or type of workflow
+    
+    Returns:
+        WorkflowTemplate instance or None if not found
+    """
+    try:
+        # Try as WorkflowType enum value
+        workflow_type = WorkflowType(workflow_name)
+        return get_workflow_template(workflow_type)
+    except (ValueError, KeyError):
+        # Try by name
+        return get_workflow_by_name(workflow_name)
+
+
+def save_custom_workflow(name: str, config: AcademicConfig, workflow_dir: Path) -> bool:
+    """
+    Save current configuration as a custom workflow.
+    
+    Args:
+        name: Custom workflow name
+        config: Academic configuration to save
+        workflow_dir: Directory to save workflows
+    
+    Returns:
+        True if saved successfully
+    """
+    try:
+        workflow_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Sanitize filename
+        safe_name = "".join(c if c.isalnum() or c in ('-', '_') else '_' for c in name)
+        filepath = workflow_dir / f"{safe_name}.json"
+        
+        # Save configuration
+        workflow_data = {
+            "name": name,
+            "config": config.to_dict(),
+            "created_at": datetime.now().isoformat(),
+        }
+        
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(workflow_data, f, indent=2, ensure_ascii=False)
+        
+        print(f"{Colors.OKGREEN}✓{Colors.ENDC} Saved custom workflow: {filepath}\n")
+        return True
+        
+    except Exception as e:
+        print(f"{Colors.FAIL}❌ Failed to save workflow: {e}{Colors.ENDC}\n")
+        return False
+
+
+def load_custom_workflow(name: str, workflow_dir: Path) -> Optional[AcademicConfig]:
+    """
+    Load a custom workflow configuration.
+    
+    Args:
+        name: Custom workflow name
+        workflow_dir: Directory containing workflows
+    
+    Returns:
+        AcademicConfig instance or None if not found
+    """
+    try:
+        # Sanitize filename
+        safe_name = "".join(c if c.isalnum() or c in ('-', '_') else '_' for c in name)
+        filepath = workflow_dir / f"{safe_name}.json"
+        
+        if not filepath.exists():
+            print(f"{Colors.FAIL}❌ Custom workflow not found: {name}{Colors.ENDC}\n")
+            return None
+        
+        with open(filepath, 'r', encoding='utf-8') as f:
+            workflow_data = json.load(f)
+        
+        # Reconstruct config from dict
+        config_dict = workflow_data.get('config', {})
+        
+        # Convert string enums back to enum types
+        from .academic_config import CitationStyle, OutputFormat, Discipline
+        
+        config = AcademicConfig(
+            citation_style=CitationStyle(config_dict.get('citation_style', 'apa')),
+            output_format=OutputFormat(config_dict.get('output_format', 'paper')),
+            discipline=Discipline(config_dict.get('discipline', 'general')),
+            word_count_target=config_dict.get('word_count_target', 8000),
+            include_abstract=config_dict.get('include_abstract', True),
+            include_methodology=config_dict.get('include_methodology', True),
+            scholar_priority=config_dict.get('scholar_priority', True),
+            export_bibliography=config_dict.get('export_bibliography', False),
+            min_peer_reviewed=config_dict.get('min_peer_reviewed', 5),
+            source_quality_threshold=config_dict.get('source_quality_threshold', 7),
+        )
+        
+        print(f"{Colors.OKGREEN}✓{Colors.ENDC} Loaded custom workflow: {workflow_data.get('name', name)}\n")
+        return config
+        
+    except Exception as e:
+        print(f"{Colors.FAIL}❌ Failed to load workflow: {e}{Colors.ENDC}\n")
+        return None
+
+
+def display_academic_config(config: AcademicConfig, workflow_name: Optional[str] = None):
     """Display academic configuration settings with enhanced visual formatting"""
     print(f"\n{Colors.OKCYAN}╔════════════════════════════════════════════════════════════════╗{Colors.ENDC}")
     print(f"{Colors.OKCYAN}║{Colors.ENDC} {Colors.BOLD}📚 ACADEMIC MODE ENABLED{Colors.ENDC}                                      {Colors.OKCYAN}║{Colors.ENDC}")
     print(f"{Colors.OKCYAN}╚════════════════════════════════════════════════════════════════╝{Colors.ENDC}\n")
+    
+    if workflow_name:
+        print(f"{Colors.BOLD}Workflow:{Colors.ENDC} {Colors.OKGREEN}{workflow_name}{Colors.ENDC}\n")
     
     print(f"{Colors.BOLD}Configuration:{Colors.ENDC}")
     print(f"  • Citation Style:     {Colors.OKGREEN}{config.citation_style.value.upper()}{Colors.ENDC}")
@@ -233,7 +367,7 @@ def create_question_file(question: str, project_root: Path) -> tuple[str, str]:
     return str(filepath), filename
 
 
-def run_research(dataset_filename: str, project_root: Path, academic_mode: bool = False, academic_config: Optional[AcademicConfig] = None) -> bool:
+def run_research(dataset_filename: str, project_root: Path, academic_mode: bool = False, academic_config: Optional[AcademicConfig] = None, workflow_template: Optional[WorkflowTemplate] = None) -> bool:
     """
     Run the DeepResearch agent with progress indicators.
     
@@ -242,6 +376,7 @@ def run_research(dataset_filename: str, project_root: Path, academic_mode: bool 
         project_root: Project root directory
         academic_mode: Whether academic mode is enabled
         academic_config: Academic configuration (if academic mode enabled)
+        workflow_template: Optional workflow template for specialized prompts
     
     Returns:
         True if research completed successfully
@@ -271,6 +406,11 @@ def run_research(dataset_filename: str, project_root: Path, academic_mode: bool 
         os.environ["GAZZALI_DISCIPLINE"] = academic_config.discipline.value
         os.environ["GAZZALI_OUTPUT_FORMAT"] = academic_config.output_format.value
         os.environ["GAZZALI_CITATION_STYLE"] = academic_config.citation_style.value
+        
+        # Set workflow-specific environment variables if template provided
+        if workflow_template:
+            os.environ["GAZZALI_WORKFLOW_TYPE"] = workflow_template.workflow_type.value
+            os.environ["GAZZALI_SEARCH_STRATEGY"] = workflow_template.search_strategy
     else:
         os.environ["GAZZALI_ACADEMIC_MODE"] = "false"
     
@@ -296,7 +436,13 @@ def run_research(dataset_filename: str, project_root: Path, academic_mode: bool 
     if academic_mode:
         print(f"{Colors.OKGREEN}Academic Mode:{Colors.ENDC} Prioritizing peer-reviewed sources")
         print(f"{Colors.OKGREEN}Research Agent:{Colors.ENDC} Tongyi DeepResearch 30B")
-        print(f"{Colors.OKGREEN}Search Strategy:{Colors.ENDC} Scholar-first with quality filtering\n")
+        
+        if workflow_template:
+            print(f"{Colors.OKGREEN}Workflow:{Colors.ENDC} {workflow_template.name}")
+            print(f"{Colors.OKGREEN}Search Strategy:{Colors.ENDC} {workflow_template.search_strategy[:80]}...")
+        else:
+            print(f"{Colors.OKGREEN}Search Strategy:{Colors.ENDC} Scholar-first with quality filtering")
+        print()
     else:
         print(f"Launching Tongyi DeepResearch agent...\n")
     
@@ -624,6 +770,28 @@ Examples:
         help='Export bibliography to .bib file'
     )
     
+    # Workflow template arguments
+    parser.add_argument(
+        '--workflow',
+        choices=['literature_review', 'systematic_review', 'methodology_comparison', 'theoretical_analysis'],
+        help='Use a preset workflow template for common research tasks'
+    )
+    parser.add_argument(
+        '--list-workflows',
+        action='store_true',
+        help='List available workflow templates and exit'
+    )
+    parser.add_argument(
+        '--save-workflow',
+        metavar='NAME',
+        help='Save current configuration as a custom workflow'
+    )
+    parser.add_argument(
+        '--load-workflow',
+        metavar='NAME',
+        help='Load a custom workflow configuration'
+    )
+    
     # General arguments
     parser.add_argument(
         '--chunked',
@@ -642,6 +810,10 @@ Examples:
     
     args = parser.parse_args()
     
+    # Handle list workflows command
+    if args.list_workflows:
+        list_workflows_and_exit()
+    
     # Print banner
     print_banner()
     
@@ -651,15 +823,55 @@ Examples:
     # Check environment
     check_environment()
     
+    # Workflow directory for custom workflows
+    workflow_dir = project_root / ".gazzali" / "workflows"
+    
     # Load academic configuration if in academic mode
     academic_config = None
+    workflow_name = None
+    workflow_template = None
+    
     if args.academic:
-        # Load from environment first, then override with args
-        academic_config = AcademicConfig.from_env()
+        # Priority order:
+        # 1. Load custom workflow if specified
+        # 2. Load preset workflow template if specified
+        # 3. Load from environment
+        # 4. Override with command-line args
+        
+        if args.load_workflow:
+            # Load custom workflow
+            academic_config = load_custom_workflow(args.load_workflow, workflow_dir)
+            if academic_config:
+                workflow_name = f"Custom: {args.load_workflow}"
+            else:
+                print(f"{Colors.WARNING}⚠️  Falling back to default configuration{Colors.ENDC}\n")
+                academic_config = AcademicConfig.from_env()
+        
+        elif args.workflow:
+            # Load preset workflow template
+            workflow_template = load_workflow_template(args.workflow)
+            if workflow_template:
+                academic_config = workflow_template.academic_config
+                workflow_name = workflow_template.name
+                print(f"{Colors.OKGREEN}✓{Colors.ENDC} Loaded workflow template: {workflow_name}\n")
+            else:
+                print(f"{Colors.WARNING}⚠️  Workflow not found: {args.workflow}{Colors.ENDC}")
+                print(f"{Colors.WARNING}⚠️  Falling back to default configuration{Colors.ENDC}\n")
+                academic_config = AcademicConfig.from_env()
+        
+        else:
+            # Load from environment
+            academic_config = AcademicConfig.from_env()
+        
+        # Override with command-line arguments (highest priority)
         if args.citation_style or args.output_format or args.discipline or args.word_count or args.export_bib:
             academic_config = AcademicConfig.from_args(args)
         
-        display_academic_config(academic_config)
+        display_academic_config(academic_config, workflow_name)
+        
+        # Save workflow if requested
+        if args.save_workflow:
+            save_custom_workflow(args.save_workflow, academic_config, workflow_dir)
     
     # Get question
     if args.question:
@@ -717,10 +929,10 @@ Examples:
             print(final_report[:1000] + "...\n")
         else:
             print(f"{Colors.WARNING}⚠️  Chunked mode failed, falling back to standard pipeline{Colors.ENDC}\n")
-            success = run_research(question_filename, project_root, academic_mode=args.academic, academic_config=academic_config)
+            success = run_research(question_filename, project_root, academic_mode=args.academic, academic_config=academic_config, workflow_template=workflow_template)
     else:
         # Normal mode
-        success = run_research(question_filename, project_root, academic_mode=args.academic, academic_config=academic_config)
+        success = run_research(question_filename, project_root, academic_mode=args.academic, academic_config=academic_config, workflow_template=workflow_template)
     
     if not args.chunked and success:
         # Find and display result
