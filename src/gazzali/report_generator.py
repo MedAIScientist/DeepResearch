@@ -1,16 +1,29 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Academic Report Generator Module for Gazzali Research
+Academic Report Data Models for Gazzali Research
 
-This module provides data models and generation logic for creating structured
-academic reports with proper formatting, citations, and section organization.
+This module provides the DATA MODELS and OUTPUT FORMATTING for academic reports.
+It defines the structure of reports and how they are converted to different formats
+(Markdown, LaTeX, etc.).
+
+For REPORT GENERATION LOGIC (calling synthesis models, parsing content, etc.),
+see academic_report_generator.py.
+
+Components:
+- AcademicReport: Main report data model with sections, metadata, and bibliography
+- ResearchMetadata: Metadata about the research process and sources
+- Section constants: Standard section names (SECTION_ABSTRACT, etc.)
+- Output methods: to_markdown(), to_latex(), save()
+- Helper functions: create_empty_report()
 
 Requirements addressed:
 - 5.2: Structured academic report sections
 - 12.1: Research implications and impact analysis
 - 12.2: Theoretical and practical contributions
 - 12.3: Future research directions
+- 13.1: Multiple output format support
+- 13.2: Format-specific section templates
 """
 
 from __future__ import annotations

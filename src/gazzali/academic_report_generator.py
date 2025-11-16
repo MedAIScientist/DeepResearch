@@ -1,12 +1,30 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Academic Report Generator for Gazzali Research
+Academic Report Generation Logic for Gazzali Research
 
-This module provides the core report generation functionality for creating
-structured academic reports with proper formatting, citations, and section
-organization. It integrates with the synthesis model to generate comprehensive
-academic documents.
+This module provides the BUSINESS LOGIC for generating academic reports.
+It handles calling synthesis models, parsing content, structuring sections,
+and assembling the final report.
+
+For REPORT DATA MODELS and OUTPUT FORMATTING (to_markdown, to_latex, save),
+see report_generator.py.
+
+Components:
+- AcademicReportGenerator: Main class that orchestrates report generation
+  * Calls synthesis model with academic prompts
+  * Parses generated content into structured sections
+  * Formats citations and generates bibliography
+  * Validates report structure
+  * Assembles final AcademicReport object
+
+Workflow:
+1. Prepare synthesis prompt with academic guidelines
+2. Call synthesis model (e.g., grok-2-1212)
+3. Parse response into sections
+4. Format citations using CitationManager
+5. Create AcademicReport object (from report_generator.py)
+6. Validate and return report
 
 Requirements addressed:
 - 5.1: Academic writing style and formal tone
