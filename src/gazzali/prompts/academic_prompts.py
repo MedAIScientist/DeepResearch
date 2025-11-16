@@ -17,6 +17,7 @@ The prompts are designed to meet academic standards including:
 
 from typing import Dict, Optional
 from datetime import datetime
+from ..interdisciplinary_analyzer import create_interdisciplinary_prompt_addition
 
 
 # Base academic research prompt with scholarly focus
@@ -251,6 +252,9 @@ def get_academic_research_prompt(
     # Add current date
     current_date = datetime.now().strftime("%Y-%m-%d")
     prompt = prompt + current_date
+    
+    # Add interdisciplinary research guidelines
+    prompt += create_interdisciplinary_prompt_addition()
     
     # Add discipline-specific modifiers
     if discipline:
