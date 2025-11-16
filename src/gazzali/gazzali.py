@@ -92,13 +92,17 @@ def check_environment():
 
 
 def display_academic_config(config: AcademicConfig):
-    """Display academic configuration settings"""
-    print(f"{Colors.BOLD}📚 Academic Mode Configuration:{Colors.ENDC}")
-    print(f"   Citation Style: {config.citation_style.value.upper()}")
-    print(f"   Output Format: {config.output_format.value.capitalize()}")
-    print(f"   Discipline: {config.discipline.value.capitalize()}")
-    print(f"   Word Count Target: {config.word_count_target}")
-    print(f"   Scholar Priority: {'Yes' if config.scholar_priority else 'No'}")
+    """Display academic configuration settings with enhanced visual formatting"""
+    print(f"\n{Colors.OKCYAN}╔════════════════════════════════════════════════════════════════╗{Colors.ENDC}")
+    print(f"{Colors.OKCYAN}║{Colors.ENDC} {Colors.BOLD}📚 ACADEMIC MODE ENABLED{Colors.ENDC}                                      {Colors.OKCYAN}║{Colors.ENDC}")
+    print(f"{Colors.OKCYAN}╚════════════════════════════════════════════════════════════════╝{Colors.ENDC}\n")
+    
+    print(f"{Colors.BOLD}Configuration:{Colors.ENDC}")
+    print(f"  • Citation Style:     {Colors.OKGREEN}{config.citation_style.value.upper()}{Colors.ENDC}")
+    print(f"  • Output Format:      {Colors.OKGREEN}{config.output_format.value.capitalize()}{Colors.ENDC}")
+    print(f"  • Discipline:         {Colors.OKGREEN}{config.discipline.value.capitalize()}{Colors.ENDC}")
+    print(f"  • Word Count Target:  {Colors.OKGREEN}{config.word_count_target:,}{Colors.ENDC}")
+    print(f"  • Scholar Priority:   {Colors.OKGREEN}{'Enabled' if config.scholar_priority else 'Disabled'}{Colors.ENDC}")
     
     # Validate configuration
     issues = config.validate()
@@ -135,7 +139,7 @@ def get_question_interactive():
 
 def refine_question(question: str, config: AcademicConfig) -> Optional[str]:
     """
-    Refine research question using QuestionRefiner.
+    Refine research question using QuestionRefiner with enhanced progress display.
     
     Args:
         question: Original research question
@@ -147,7 +151,11 @@ def refine_question(question: str, config: AcademicConfig) -> Optional[str]:
     try:
         from .question_refiner import QuestionRefiner
         
-        print(f"\n{Colors.OKCYAN}🔍 Refining research question...{Colors.ENDC}\n")
+        print(f"\n{Colors.OKCYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{Colors.ENDC}")
+        print(f"{Colors.BOLD}🔍 STAGE 1: Question Refinement{Colors.ENDC}")
+        print(f"{Colors.OKCYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{Colors.ENDC}\n")
+        
+        print(f"Analyzing research question for academic rigor...")
         
         openrouter_key = get_env("OPENROUTER_API_KEY")
         if not openrouter_key:
@@ -161,13 +169,27 @@ def refine_question(question: str, config: AcademicConfig) -> Optional[str]:
         )
         
         if refined and refined.refined_questions:
-            print(f"{Colors.OKGREEN}✓{Colors.ENDC} Question refined successfully!\n")
-            print(f"{Colors.BOLD}Original:{Colors.ENDC} {refined.original_topic}\n")
+            print(f"\n{Colors.OKGREEN}✅ Question Refinement Complete!{Colors.ENDC}\n")
+            
+            # Display original question
+            print(f"{Colors.BOLD}Original Question:{Colors.ENDC}")
+            print(f"  {refined.original_topic}\n")
+            
+            # Display refined questions
             print(f"{Colors.BOLD}Refined Questions:{Colors.ENDC}")
             for i, q in enumerate(refined.refined_questions, 1):
-                print(f"   {i}. {q}")
-            print(f"\n{Colors.BOLD}Question Type:{Colors.ENDC} {refined.question_type}")
-            print(f"{Colors.BOLD}Scope:{Colors.ENDC} {refined.scope_assessment}\n")
+                marker = "→" if i == 1 else " "
+                print(f"  {marker} {i}. {q}")
+            
+            # Display quality assessment
+            print(f"\n{Colors.BOLD}Quality Assessment:{Colors.ENDC}")
+            print(f"  • Question Type:  {Colors.OKGREEN}{refined.question_type}{Colors.ENDC}")
+            print(f"  • Scope:          {Colors.OKGREEN}{refined.scope_assessment}{Colors.ENDC}")
+            
+            if refined.key_variables:
+                print(f"  • Key Variables:  {', '.join(refined.key_variables)}")
+            
+            print(f"\n{Colors.OKCYAN}Using refined question for research...{Colors.ENDC}\n")
             
             # Use the first refined question
             return refined.refined_questions[0]
@@ -211,13 +233,14 @@ def create_question_file(question: str, project_root: Path) -> tuple[str, str]:
     return str(filepath), filename
 
 
-def run_research(dataset_filename: str, project_root: Path) -> bool:
+def run_research(dataset_filename: str, project_root: Path, academic_mode: bool = False) -> bool:
     """
-    Run the DeepResearch agent.
+    Run the DeepResearch agent with progress indicators.
     
     Args:
         dataset_filename: Name of the dataset file
         project_root: Project root directory
+        academic_mode: Whether academic mode is enabled
     
     Returns:
         True if research completed successfully
@@ -254,8 +277,18 @@ def run_research(dataset_filename: str, project_root: Path) -> bool:
         "--roll_out_count", str(rollout_count)
     ]
     
-    print(f"{Colors.OKCYAN}🚀 Launching Tongyi DeepResearch agent...{Colors.ENDC}")
+    # Display research stage header
+    stage_num = "2" if academic_mode else "1"
+    print(f"\n{Colors.OKCYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{Colors.ENDC}")
+    print(f"{Colors.BOLD}🔬 STAGE {stage_num}: Deep Research{Colors.ENDC}")
     print(f"{Colors.OKCYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{Colors.ENDC}\n")
+    
+    if academic_mode:
+        print(f"{Colors.OKGREEN}Academic Mode:{Colors.ENDC} Prioritizing peer-reviewed sources")
+        print(f"{Colors.OKGREEN}Research Agent:{Colors.ENDC} Tongyi DeepResearch 30B")
+        print(f"{Colors.OKGREEN}Search Strategy:{Colors.ENDC} Scholar-first with quality filtering\n")
+    else:
+        print(f"Launching Tongyi DeepResearch agent...\n")
     
     try:
         subprocess.run(cmd, check=True, capture_output=False, text=True)
@@ -404,7 +437,8 @@ def generate_academic_report(
     question: str,
     research_results: str,
     config: AcademicConfig,
-    output_dir: Path
+    output_dir: Path,
+    citation_manager: Optional[Any] = None
 ) -> Optional[Path]:
     """
     Generate academic report with proper formatting and citations.
@@ -414,6 +448,7 @@ def generate_academic_report(
         research_results: Research findings
         config: Academic configuration
         output_dir: Output directory
+        citation_manager: Optional existing citation manager
     
     Returns:
         Path to generated report or None
@@ -422,17 +457,24 @@ def generate_academic_report(
         from .report_generator import AcademicReportGenerator
         from .citation_manager import CitationManager
         
+        # Display stage header
         print(f"\n{Colors.OKCYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{Colors.ENDC}")
-        print(f"{Colors.BOLD}📚 Generating academic report...{Colors.ENDC}")
+        print(f"{Colors.BOLD}📝 STAGE 3: Academic Report Generation{Colors.ENDC}")
         print(f"{Colors.OKCYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{Colors.ENDC}\n")
+        
+        print(f"Synthesizing research into academic format...")
+        print(f"  • Format: {Colors.OKGREEN}{config.output_format.value.capitalize()}{Colors.ENDC}")
+        print(f"  • Citation Style: {Colors.OKGREEN}{config.citation_style.value.upper()}{Colors.ENDC}")
+        print(f"  • Target Length: {Colors.OKGREEN}{config.word_count_target:,} words{Colors.ENDC}\n")
         
         openrouter_key = get_env("OPENROUTER_API_KEY")
         if not openrouter_key:
             print(f"{Colors.WARNING}⚠️  Cannot generate academic report: API key not set{Colors.ENDC}")
             return None
         
-        # Initialize citation manager
-        citation_manager = CitationManager()
+        # Initialize or use existing citation manager
+        if citation_manager is None:
+            citation_manager = CitationManager()
         
         # Initialize report generator
         generator = AcademicReportGenerator(
@@ -441,6 +483,7 @@ def generate_academic_report(
         )
         
         # Generate report
+        print(f"Generating structured sections...")
         report = generator.generate_report(
             question=question,
             research_results=research_results,
@@ -456,12 +499,31 @@ def generate_academic_report(
         
         report.save(str(report_path), format='markdown')
         
-        print(f"\n{Colors.OKGREEN}✅ Academic report generated!{Colors.ENDC}")
-        print(f"{Colors.BOLD}📁 Report:{Colors.ENDC} {report_path}\n")
-        print(f"{Colors.BOLD}📊 Statistics:{Colors.ENDC}")
-        print(f"   Word Count: {report.word_count}")
-        print(f"   Sections: {len(report.sections)}")
-        print(f"   Citations: {len(citation_manager.citations)}\n")
+        # Display success with detailed metrics
+        print(f"\n{Colors.OKGREEN}✅ Academic Report Complete!{Colors.ENDC}\n")
+        
+        print(f"{Colors.BOLD}📁 Output:{Colors.ENDC}")
+        print(f"  {report_path}\n")
+        
+        print(f"{Colors.BOLD}📊 Report Metrics:{Colors.ENDC}")
+        print(f"  • Word Count:        {Colors.OKGREEN}{report.word_count:,}{Colors.ENDC}")
+        print(f"  • Sections:          {Colors.OKGREEN}{len(report.sections)}{Colors.ENDC}")
+        print(f"  • Citations:         {Colors.OKGREEN}{len(citation_manager.citations)}{Colors.ENDC}")
+        
+        # Calculate source quality metrics
+        peer_reviewed = sum(1 for c in citation_manager.citations.values() 
+                          if c.venue_type.value in ['journal', 'conference'])
+        if len(citation_manager.citations) > 0:
+            quality_pct = (peer_reviewed / len(citation_manager.citations)) * 100
+            print(f"  • Peer-Reviewed:     {Colors.OKGREEN}{peer_reviewed} ({quality_pct:.1f}%){Colors.ENDC}")
+        
+        # Show highly cited sources
+        highly_cited = [c for c in citation_manager.citations.values() 
+                       if c.citation_count and c.citation_count > 100]
+        if highly_cited:
+            print(f"  • Highly Cited:      {Colors.OKGREEN}{len(highly_cited)} sources{Colors.ENDC}")
+        
+        print()
         
         # Export bibliography if requested
         if config.export_bibliography:
@@ -645,10 +707,10 @@ Examples:
             print(final_report[:1000] + "...\n")
         else:
             print(f"{Colors.WARNING}⚠️  Chunked mode failed, falling back to standard pipeline{Colors.ENDC}\n")
-            success = run_research(question_filename, project_root)
+            success = run_research(question_filename, project_root, academic_mode=args.academic)
     else:
         # Normal mode
-        success = run_research(question_filename, project_root)
+        success = run_research(question_filename, project_root, academic_mode=args.academic)
     
     if not args.chunked and success:
         # Find and display result
@@ -673,9 +735,23 @@ Examples:
                     config=academic_config,
                     output_dir=output_dir
                 )
+                
+                # Display final academic success message
+                if academic_report_path:
+                    print(f"\n{Colors.OKCYAN}╔════════════════════════════════════════════════════════════════╗{Colors.ENDC}")
+                    print(f"{Colors.OKCYAN}║{Colors.ENDC} {Colors.OKGREEN}✅ ACADEMIC RESEARCH COMPLETE{Colors.ENDC}                              {Colors.OKCYAN}║{Colors.ENDC}")
+                    print(f"{Colors.OKCYAN}╚════════════════════════════════════════════════════════════════╝{Colors.ENDC}\n")
+                    
+                    print(f"{Colors.BOLD}Your scholarly report is ready!{Colors.ENDC}")
+                    print(f"  • Peer-reviewed sources prioritized")
+                    print(f"  • Proper {academic_config.citation_style.value.upper()} citations")
+                    print(f"  • Academic writing standards applied")
+                    print(f"  • {academic_config.output_format.value.capitalize()} format structure\n")
             else:
                 # Standard mode - basic report already saved
-                print(f"{Colors.OKGREEN}✅ Research completed successfully!{Colors.ENDC}\n")
+                print(f"\n{Colors.OKCYAN}╔════════════════════════════════════════════════════════════════╗{Colors.ENDC}")
+                print(f"{Colors.OKCYAN}║{Colors.ENDC} {Colors.OKGREEN}✅ RESEARCH COMPLETE{Colors.ENDC}                                       {Colors.OKCYAN}║{Colors.ENDC}")
+                print(f"{Colors.OKCYAN}╚════════════════════════════════════════════════════════════════╝{Colors.ENDC}\n")
     
     # Cleanup temp file unless --no-keep
     if not args.no_keep:
