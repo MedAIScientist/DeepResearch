@@ -154,10 +154,9 @@ def refine_question(question: str, config: AcademicConfig) -> Optional[str]:
             print(f"{Colors.WARNING}⚠️  Cannot refine question: API key not set{Colors.ENDC}")
             return None
         
-        refiner = QuestionRefiner()
+        refiner = QuestionRefiner(api_key=openrouter_key)
         refined = refiner.refine_question(
             broad_topic=question,
-            api_key=openrouter_key,
             discipline=config.discipline.value if config.discipline else None
         )
         
@@ -420,7 +419,7 @@ def generate_academic_report(
         Path to generated report or None
     """
     try:
-        from .report_models import AcademicReportGenerator
+        from .report_generator import AcademicReportGenerator
         from .citation_manager import CitationManager
         
         print(f"\n{Colors.OKCYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{Colors.ENDC}")
