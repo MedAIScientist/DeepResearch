@@ -35,6 +35,12 @@ try:
     from gazzali.config import get_env
     from gazzali.citation_manager import CitationManager, Citation, VenueType
     from gazzali.source_credibility import SourceCredibilityEvaluator, CredibilityScore
+    from gazzali.methodology_extractor import (
+        MethodologyExtractor,
+        TheoryExtractor,
+        MethodologyInfo,
+        TheoryInfo,
+    )
 except Exception:  # pragma: no cover
     def get_env(name: str, default=None):
         return os.getenv(name, default)
@@ -43,6 +49,10 @@ except Exception:  # pragma: no cover
     VenueType = None
     SourceCredibilityEvaluator = None
     CredibilityScore = None
+    MethodologyExtractor = None
+    TheoryExtractor = None
+    MethodologyInfo = None
+    TheoryInfo = None
 
 
 SERPER_KEY = get_env("SERPER_API_KEY") or os.environ.get("SERPER_KEY_ID")
@@ -108,6 +118,10 @@ class Scholar(BaseTool):
         self.credibility_evaluator = SourceCredibilityEvaluator(
             min_quality_threshold=quality_threshold
         ) if SourceCredibilityEvaluator else None
+        
+        # Initialize methodology and theory extractors
+        self.methodology_extractor = MethodologyExtractor() if MethodologyExtractor else None
+        self.theory_extractor = TheoryExtractor() if TheoryExtractor else None
         
         # Academic search operators for query optimization
         self.academic_operators = {
@@ -302,24 +316,44 @@ class Scholar(BaseTool):
         Returns:
             Dictionary with structured metadata
         """
+        title = page.get('title', '')
+        abstract = page.get('snippet', '')
+        
         metadata = {
             'index': idx,
-            'title': page.get('title', ''),
+            'title': title,
             'authors': self._extract_authors(page),
             'year': self._extract_year(page),
             'venue': self._extract_venue(page),
             'venue_type': self._identify_venue_type(page),
             'citation_count': page.get('citedBy', 0),
-            'abstract': page.get('snippet', ''),
+            'abstract': abstract,
             'url': page.get('link', ''),
             'pdf_url': page.get('pdfUrl', None),
             'is_open_access': bool(page.get('pdfUrl')),
             'publication_info': page.get('publicationInfo', ''),
             'paper_type': self._identify_paper_type(page),
-            'methodology': self._extract_methodology(page),
+            'methodology': self._extract_methodology_simple(page),
             'is_highly_cited': self._is_highly_cited(page.get('citedBy', 0)),
             'related_url': page.get('relatedUrl', None),
         }
+        
+        # Extract detailed methodology and theory information
+        if self.methodology_extractor and abstract:
+            methodology_info = self.methodology_extractor.extract_methodology(abstract, title)
+            metadata['methodology_detailed'] = methodology_info.to_dict()
+            metadata['methodology_type'] = methodology_info.methodology_type.value
+        else:
+            metadata['methodology_detailed'] = None
+            metadata['methodology_type'] = None
+        
+        if self.theory_extractor and abstract:
+            theories = self.theory_extractor.extract_theories(abstract, title)
+            metadata['theories'] = [t.to_dict() for t in theories]
+            metadata['theory_names'] = [t.theory_name for t in theories]
+        else:
+            metadata['theories'] = []
+            metadata['theory_names'] = []
         
         # Evaluate source credibility
         if self.credibility_evaluator:
@@ -505,9 +539,9 @@ class Scholar(BaseTool):
         
         return 'unknown'
     
-    def _extract_methodology(self, page: Dict[str, Any]) -> Optional[str]:
+    def _extract_methodology_simple(self, page: Dict[str, Any]) -> Optional[str]:
         """
-        Extract methodology information from result.
+        Extract simple methodology information from result (legacy method).
         
         Args:
             page: Raw result dictionary
@@ -673,10 +707,22 @@ class Scholar(BaseTool):
         meta_info = []
         if metadata['paper_type'] != 'unknown':
             meta_info.append(f"Type: {metadata['paper_type']}")
-        if metadata['methodology']:
+        
+        # Use detailed methodology if available, otherwise simple
+        if metadata.get('methodology_type'):
+            meta_info.append(f"Methodology: {metadata['methodology_type']}")
+        elif metadata['methodology']:
             meta_info.append(f"Methods: {metadata['methodology']}")
+        
         if meta_info:
             lines.append(f"   {' | '.join(meta_info)}")
+        
+        # Add theory information if available
+        if metadata.get('theory_names'):
+            theory_str = ', '.join(metadata['theory_names'][:3])
+            if len(metadata['theory_names']) > 3:
+                theory_str += f' (+{len(metadata["theory_names"]) - 3} more)'
+            lines.append(f"   Theories: {theory_str}")
         
         # Open access indicator
         if metadata['is_open_access']:

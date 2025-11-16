@@ -74,6 +74,8 @@ class ResearchMetadata:
         key_authors: List of prominent authors in the field
         key_theories: List of theoretical frameworks identified
         methodologies_found: List of research methodologies encountered
+        methodology_details: Detailed methodology information (dict)
+        theory_details: Detailed theory information (list of dicts)
         generated_at: Timestamp of report generation
     """
     question: str
@@ -86,6 +88,8 @@ class ResearchMetadata:
     key_authors: List[str] = field(default_factory=list)
     key_theories: List[str] = field(default_factory=list)
     methodologies_found: List[str] = field(default_factory=list)
+    methodology_details: Dict[str, Any] = field(default_factory=dict)
+    theory_details: List[Dict[str, Any]] = field(default_factory=list)
     generated_at: datetime = field(default_factory=datetime.now)
     
     def to_dict(self) -> Dict[str, Any]:
@@ -106,6 +110,8 @@ class ResearchMetadata:
             "key_authors": self.key_authors,
             "key_theories": self.key_theories,
             "methodologies_found": self.methodologies_found,
+            "methodology_details": self.methodology_details,
+            "theory_details": self.theory_details,
             "generated_at": self.generated_at.isoformat(),
         }
     
