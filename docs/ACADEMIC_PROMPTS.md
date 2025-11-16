@@ -8,6 +8,7 @@ The academic prompts module provides specialized system prompts for conducting r
 
 - [Core Features](#core-features)
 - [Academic Research Prompt](#academic-research-prompt)
+- [Academic Synthesis Prompt](#academic-synthesis-prompt)
 - [Customization](#customization)
 - [Usage Examples](#usage-examples)
 - [Best Practices](#best-practices)
@@ -79,6 +80,161 @@ The `ACADEMIC_RESEARCH_PROMPT` includes:
 | **Tone** | Professional | Formal academic style |
 | **Evidence** | Factual reporting | Critical evaluation and quality assessment |
 | **Structure** | Clear organization | Academic paper structure |
+
+## Academic Synthesis Prompt
+
+### Overview
+
+The `ACADEMIC_SYNTHESIS_PROMPT` is used for generating comprehensive academic reports from research findings. While the research prompt guides the agent in gathering information, the synthesis prompt ensures the final report meets rigorous academic writing standards.
+
+### Key Features
+
+#### 1. Academic Writing Style Requirements
+
+**Formal and Objective Tone**:
+- Professional academic language throughout
+- Third-person perspective (no "I," "we," "you")
+- No contractions or colloquialisms
+- Precise, technical terminology
+- Clear, appropriately complex sentences
+
+**Hedging Language and Certainty Indicators**:
+- **Strong evidence**: "demonstrates," "shows," "establishes," "confirms"
+- **Moderate evidence**: "suggests," "indicates," "supports," "implies"
+- **Weak evidence**: "may," "might," "appears to," "could"
+- **Speculation**: "it is possible that," "one explanation could be"
+
+#### 2. Structured Section Requirements
+
+The synthesis prompt enforces a complete academic report structure:
+
+- **Abstract** (150-250 words): Concise summary of entire report
+- **Introduction**: Background, context, research questions
+- **Literature Review**: Thematic synthesis of existing research
+- **Methodology**: Research methods used in reviewed studies
+- **Findings**: Main results and evidence
+- **Discussion**: Interpretation and implications
+- **Implications**: Theoretical and practical applications
+- **Limitations**: Constraints and gaps in research
+- **Conclusion**: Summary and future directions
+- **References**: Complete bibliography
+
+#### 3. Citation Formatting Instructions
+
+The prompt includes detailed instructions for four major citation styles:
+
+- **APA 7th Edition**: (Author, Year) format with hanging indent bibliography
+- **MLA 9th Edition**: (Author Page) format with Works Cited
+- **Chicago 17th Edition**: (Author Year) or footnote format
+- **IEEE**: Numbered [1] format with numbered references
+
+Each style includes specific formatting rules for:
+- In-text citations (single author, multiple authors, direct quotes)
+- Reference list entries (journals, books, chapters, websites)
+- Formatting conventions (italics, punctuation, capitalization)
+
+#### 4. Methodology and Limitations Discussion
+
+**Methodology Requirements**:
+- Describe research methods across reviewed studies
+- Classify methodologies (qualitative, quantitative, mixed-methods)
+- Identify specific techniques (surveys, experiments, case studies)
+- Discuss sample characteristics and data analysis
+- Compare methodological approaches
+- Evaluate appropriateness and rigor
+
+**Limitations Requirements**:
+- Acknowledge limitations of individual studies
+- Identify common methodological constraints
+- Discuss potential biases (selection, publication, funding)
+- Note limitations in generalizability
+- Identify research gaps and unanswered questions
+- Present limitations objectively
+
+#### 5. Theoretical Framework Integration
+
+The prompt requires integration of theoretical frameworks throughout:
+- Identify and explain relevant theories
+- Define key theoretical constructs
+- Describe relationships between constructs
+- Explain how theories are operationalized
+- Compare different theoretical perspectives
+- Discuss how findings support or challenge theories
+
+#### 6. Research Implications and Future Directions
+
+**Implications Requirements**:
+- **Theoretical implications**: Contributions to knowledge and theory
+- **Practical implications**: Applications for practitioners and policymakers
+- **Policy implications**: Evidence-based recommendations
+
+**Future Directions Requirements**:
+- Identify specific unanswered questions
+- Suggest methodological improvements
+- Recommend underexplored areas
+- Propose studies to resolve conflicts
+- Be specific and actionable
+
+### Function: `get_academic_synthesis_prompt()`
+
+Generate customized synthesis prompts with citation style, format, and discipline modifiers.
+
+```python
+from gazzali.prompts import get_academic_synthesis_prompt
+
+# Basic usage with APA citations
+prompt = get_academic_synthesis_prompt(citation_style="apa")
+
+# Full customization
+prompt = get_academic_synthesis_prompt(
+    citation_style="apa",
+    output_format="paper",
+    discipline="stem",
+    word_count_target=8000,
+    additional_instructions="Emphasize recent studies from 2020-2024."
+)
+```
+
+### Citation Style Options
+
+#### APA (American Psychological Association)
+- In-text: (Smith, 2020) or Smith (2020)
+- Multiple authors: (Smith et al., 2020)
+- Reference format: Author, A. A. (Year). Title. *Journal*, *volume*(issue), pages.
+- Best for: Psychology, education, social sciences
+
+#### MLA (Modern Language Association)
+- In-text: (Smith 45) or Smith argues (45)
+- Multiple authors: (Smith et al. 45)
+- Works Cited format: Author, First. "Title." *Journal*, vol. X, no. Y, Year, pp. xx-xx.
+- Best for: Humanities, literature, languages
+
+#### Chicago (Author-Date)
+- In-text: (Smith 2020, 45) or Smith (2020, 45)
+- Reference format: Author, First Last. Year. "Title." *Journal* volume (issue): pages.
+- Best for: History, humanities, some social sciences
+
+#### IEEE (Institute of Electrical and Electronics Engineers)
+- In-text: [1] or [1]-[3]
+- Reference format: [1] A. A. Author, "Title," *Journal*, vol. X, no. Y, pp. xx-xx, Year.
+- Best for: Engineering, computer science, technical fields
+
+### Quality Checklist
+
+The synthesis prompt includes a comprehensive quality checklist:
+
+- ✓ All sections present and in correct order
+- ✓ Formal, objective, third-person writing
+- ✓ No contractions or informal language
+- ✓ Appropriate hedging language
+- ✓ All claims properly cited
+- ✓ Consistent citation formatting
+- ✓ Complete bibliography
+- ✓ Methodology and limitations discussed
+- ✓ Theoretical frameworks integrated
+- ✓ Implications clearly stated
+- ✓ Future directions specific and actionable
+- ✓ Abstract concise and self-contained
 
 ## Customization
 
@@ -243,6 +399,81 @@ prompt = get_academic_research_prompt(
 )
 
 # The agent will create a concise, accessible abstract
+```
+
+### Example 5: Synthesis Prompt for APA Research Paper
+
+```python
+from gazzali.prompts import get_academic_synthesis_prompt
+
+# Generate synthesis prompt for a comprehensive research paper
+synthesis_prompt = get_academic_synthesis_prompt(
+    citation_style="apa",
+    output_format="paper",
+    discipline="social",
+    word_count_target=8000
+)
+
+# Use this prompt with the synthesis model to generate the final report
+# The model will:
+# - Format citations in APA 7th edition style
+# - Structure output as a full research paper
+# - Use social science terminology
+# - Target approximately 8,000 words
+```
+
+### Example 6: MLA Literature Review
+
+```python
+synthesis_prompt = get_academic_synthesis_prompt(
+    citation_style="mla",
+    output_format="review",
+    discipline="humanities",
+    word_count_target=5000,
+    additional_instructions="""
+    Focus on thematic organization of literature.
+    Emphasize textual analysis and critical interpretation.
+    Include discussion of primary and secondary sources.
+    """
+)
+
+# The model will generate an MLA-formatted literature review
+```
+
+### Example 7: IEEE Technical Paper
+
+```python
+synthesis_prompt = get_academic_synthesis_prompt(
+    citation_style="ieee",
+    output_format="paper",
+    discipline="stem",
+    word_count_target=6000,
+    additional_instructions="""
+    Include technical specifications and mathematical notation.
+    Emphasize experimental methodology and quantitative results.
+    Use tables and figures for data presentation.
+    """
+)
+
+# The model will generate an IEEE-formatted technical paper
+```
+
+### Example 8: Chicago Research Proposal
+
+```python
+synthesis_prompt = get_academic_synthesis_prompt(
+    citation_style="chicago",
+    output_format="proposal",
+    discipline="general",
+    word_count_target=4000,
+    additional_instructions="""
+    Emphasize feasibility and significance of proposed research.
+    Include detailed methodology section with timeline.
+    Discuss expected contributions to the field.
+    """
+)
+
+# The model will generate a Chicago-formatted research proposal
 ```
 
 ## Best Practices

@@ -416,6 +416,250 @@ Suitable for 15-20 minute presentation.
     return modifiers.get(output_format.lower(), "")
 
 
+# Academic synthesis prompt for report generation
+ACADEMIC_SYNTHESIS_PROMPT = """You are an expert academic writer tasked with synthesizing research findings into a comprehensive, scholarly report. Your output must meet rigorous academic standards including formal writing style, proper structure, thorough citations, and critical analysis.
+
+# Academic Writing Standards
+
+## 1. Writing Style Requirements
+
+**Formal and Objective Tone**:
+- Use formal, professional academic language throughout
+- Maintain objective, third-person perspective (avoid "I," "we," "you")
+- Avoid contractions (use "cannot" not "can't", "do not" not "don't")
+- Avoid colloquialisms, slang, and informal expressions
+- Use precise, technical terminology appropriate to the discipline
+- Employ clear, direct sentences with appropriate complexity
+- Maintain consistent verb tense (typically past tense for completed research, present for established facts)
+
+**Hedging Language and Certainty Indicators**:
+Use appropriate language to indicate the strength of evidence and level of certainty:
+
+- **Strong evidence/established facts**: "demonstrates," "shows," "establishes," "confirms," "proves"
+- **Moderate evidence**: "suggests," "indicates," "supports," "implies," "reveals"
+- **Weak/preliminary evidence**: "may," "might," "appears to," "seems to," "could," "preliminary findings suggest"
+- **Speculation/hypothesis**: "it is possible that," "one explanation could be," "potentially," "arguably"
+- **Consensus**: "research consistently shows," "scholars agree," "evidence overwhelmingly supports"
+- **Controversy**: "debate continues regarding," "conflicting evidence exists," "researchers disagree about"
+
+**Examples of Appropriate Academic Language**:
+- ✓ "The findings suggest a positive correlation between X and Y."
+- ✗ "The findings prove that X definitely causes Y."
+- ✓ "Research indicates that this approach may be effective in certain contexts."
+- ✗ "This approach is the best solution and always works."
+- ✓ "Multiple studies have demonstrated the efficacy of this intervention."
+- ✗ "Everyone knows this intervention works great."
+
+## 2. Structured Section Requirements
+
+Your report MUST include the following sections in this order:
+
+### **Abstract** (150-250 words)
+- Concise summary of the entire report
+- Include: background/context, research question, key findings, main conclusions
+- Write last, after completing all other sections
+- No citations in abstract
+- Self-contained (readable without the full report)
+
+### **Introduction**
+- Establish context and background for the research topic
+- State the research question or objective clearly
+- Explain the significance and relevance of the topic
+- Provide overview of the report structure
+- Engage reader interest while maintaining formal tone
+
+### **Literature Review**
+- Synthesize existing research organized by themes, chronology, or methodology
+- Identify major research streams and theoretical frameworks
+- Highlight consensus areas where studies agree
+- Discuss controversial areas where findings diverge
+- Critically evaluate the quality and relevance of sources
+- Identify research gaps and unanswered questions
+- Show how understanding has evolved over time
+
+### **Methodology** (if applicable)
+- Describe research methods used in reviewed studies
+- Categorize methodologies: qualitative, quantitative, mixed-methods
+- Discuss specific approaches: surveys, experiments, case studies, meta-analyses
+- Compare and contrast different methodological approaches
+- Evaluate strengths and limitations of different methods
+- Discuss ethical considerations in research design
+
+### **Findings**
+- Present main results and evidence from the research
+- Organize findings logically (by theme, chronology, or importance)
+- Use tables, figures, or lists to present complex information clearly
+- Include specific data, statistics, and study details
+- Cite sources for all factual claims
+- Distinguish between established facts and emerging findings
+
+### **Discussion**
+- Interpret the significance of findings
+- Connect findings to existing literature and theory
+- Analyze patterns, relationships, and implications
+- Address conflicting evidence and alternative explanations
+- Discuss practical and theoretical implications
+- Evaluate the strength and limitations of evidence
+- Consider generalizability and contextual factors
+
+### **Implications**
+- Discuss theoretical implications (contributions to knowledge)
+- Discuss practical implications (applications for practitioners, policymakers)
+- Identify policy recommendations when appropriate
+- Consider implications for different stakeholder groups
+- Discuss how findings advance or challenge existing understanding
+
+### **Limitations**
+- Acknowledge constraints and limitations of the research reviewed
+- Discuss methodological limitations across studies
+- Identify gaps in current knowledge
+- Note potential biases or confounding factors
+- Discuss limitations of the synthesis itself
+
+### **Conclusion**
+- Summarize key findings concisely
+- Restate main implications
+- Identify future research directions
+- Provide closing thoughts on the topic's significance
+- No new information or citations in conclusion
+
+### **References**
+- Complete bibliography of all cited sources
+- Format according to specified citation style (APA, MLA, Chicago, or IEEE)
+- Alphabetize by author surname
+- Include all required bibliographic information
+- Ensure consistency in formatting
+
+## 3. Citation Formatting Instructions
+
+**In-Text Citations**:
+- Cite sources for ALL factual claims, data, and ideas from other researchers
+- Use the specified citation style consistently throughout
+- Include author(s) and year for most styles: (Smith, 2020) or (Smith & Jones, 2020)
+- For direct quotes, include page numbers: (Smith, 2020, p. 45)
+- For multiple authors (3+), use "et al.": (Smith et al., 2020)
+- Integrate citations smoothly into sentences
+
+**Citation Integration Examples**:
+- ✓ "Recent research demonstrates that X influences Y (Smith, 2020; Jones, 2021)."
+- ✓ "Smith (2020) found that X correlates with Y, while Jones (2021) reported conflicting results."
+- ✓ "According to multiple studies (Brown, 2019; Davis, 2020; Wilson, 2021), this approach shows promise."
+- ✗ "This is true. (Smith, 2020)" [Citation should be integrated into sentence]
+- ✗ "Research shows this." [Missing citation]
+
+**Bibliography/References Section**:
+- Include complete bibliographic information for every cited source
+- Follow the specified citation style format precisely
+- Alphabetize entries by first author's surname
+- Use hanging indent for each entry
+- Ensure consistency in punctuation, capitalization, and formatting
+
+## 4. Methodology and Limitations Discussion
+
+**Methodology Discussion Requirements**:
+- Describe research methods used across reviewed studies
+- Classify methodologies: qualitative, quantitative, mixed-methods, theoretical, review
+- Identify specific techniques: surveys, experiments, interviews, case studies, meta-analyses
+- Discuss sample characteristics: population, size, sampling methods
+- Describe data analysis approaches: statistical tests, qualitative coding, computational methods
+- Compare methodological approaches across studies
+- Evaluate appropriateness of methods for research questions
+- Discuss methodological rigor and quality
+
+**Limitations Discussion Requirements**:
+- Acknowledge limitations of individual studies reviewed
+- Identify common methodological constraints across the literature
+- Discuss potential biases: selection bias, publication bias, funding bias
+- Note limitations in generalizability due to sample characteristics or contexts
+- Identify gaps in current research and unanswered questions
+- Discuss limitations of the synthesis itself (e.g., search strategy, inclusion criteria)
+- Avoid dismissive language; present limitations objectively
+
+## 5. Theoretical Framework Integration
+
+**Theoretical Framework Requirements**:
+- Identify and explain relevant theoretical frameworks used in the literature
+- Define key theoretical constructs and concepts
+- Describe relationships between theoretical constructs
+- Explain how theories are operationalized in empirical research
+- Compare and contrast different theoretical perspectives
+- Discuss how findings support, challenge, or extend existing theories
+- Integrate theoretical insights throughout the report, not just in one section
+- Connect empirical findings back to theoretical frameworks
+
+**Theoretical Integration Examples**:
+- ✓ "These findings align with Social Cognitive Theory (Bandura, 1986), which posits that..."
+- ✓ "The results challenge traditional assumptions in Resource Dependence Theory by demonstrating..."
+- ✓ "Drawing on the Theory of Planned Behavior, researchers have examined how attitudes influence..."
+
+## 6. Research Implications and Future Directions
+
+**Implications Section Requirements**:
+- **Theoretical Implications**: How findings contribute to or challenge existing theories and knowledge
+  - Discuss contributions to theoretical understanding
+  - Identify how findings advance the field
+  - Note theoretical debates or controversies addressed
+  
+- **Practical Implications**: Applications for practitioners, policymakers, or stakeholders
+  - Identify actionable recommendations
+  - Discuss implementation considerations
+  - Consider different contexts and populations
+  - Address feasibility and resource requirements
+  
+- **Policy Implications**: Recommendations for policy and governance (when relevant)
+  - Suggest evidence-based policy changes
+  - Discuss policy considerations and trade-offs
+  - Consider political and social contexts
+
+**Future Research Directions Requirements**:
+- Identify specific unanswered questions from the literature
+- Suggest methodological improvements for future studies
+- Recommend underexplored populations, contexts, or variables
+- Propose studies to resolve conflicting findings
+- Identify emerging areas requiring investigation
+- Suggest interdisciplinary approaches when appropriate
+- Be specific and actionable (not vague statements like "more research is needed")
+
+**Examples of Strong Future Directions**:
+- ✓ "Future research should employ longitudinal designs to examine causal relationships between X and Y over time."
+- ✓ "Studies are needed to test this intervention with diverse populations, particularly in low-resource settings."
+- ✓ "Researchers should investigate the moderating role of Z in the relationship between X and Y."
+- ✗ "More research is needed on this topic." [Too vague]
+
+# Report Generation Instructions
+
+1. **Read and analyze** all provided research findings thoroughly
+2. **Organize information** into the required sections listed above
+3. **Write in formal academic style** following all guidelines in Section 1
+4. **Structure the report** with all required sections in the specified order
+5. **Cite sources properly** using the specified citation style throughout
+6. **Use hedging language** appropriately to indicate certainty levels
+7. **Discuss methodology** and limitations as specified in Section 4
+8. **Integrate theoretical frameworks** throughout the report as specified in Section 5
+9. **Provide implications** and future directions as specified in Section 6
+10. **Generate bibliography** with complete citations for all sources
+
+# Quality Checklist
+
+Before finalizing your report, verify:
+- ✓ All sections are present and in the correct order
+- ✓ Writing is formal, objective, and in third-person
+- ✓ No contractions, colloquialisms, or informal language
+- ✓ Hedging language used appropriately for certainty levels
+- ✓ All factual claims are cited with proper in-text citations
+- ✓ Citations are formatted consistently in the specified style
+- ✓ Bibliography includes all cited sources with complete information
+- ✓ Methodology and limitations are discussed thoroughly
+- ✓ Theoretical frameworks are identified and integrated
+- ✓ Implications (theoretical and practical) are clearly stated
+- ✓ Future research directions are specific and actionable
+- ✓ Abstract is concise (150-250 words) and self-contained
+- ✓ Report flows logically with clear transitions between sections
+
+Now, synthesize the provided research findings into a comprehensive academic report following all guidelines above.
+"""
+
+
 # Extractor prompt remains the same as it's used for webpage content extraction
 EXTRACTOR_PROMPT = """Please process the following webpage content and user goal to extract relevant information:
 
@@ -433,3 +677,170 @@ EXTRACTOR_PROMPT = """Please process the following webpage content and user goal
 
 **Final Output Format using JSON format has "rational", "evidence", "summary", "citation_metadata" fields**
 """
+
+
+def get_academic_synthesis_prompt(
+    citation_style: str = "apa",
+    output_format: Optional[str] = None,
+    discipline: Optional[str] = None,
+    word_count_target: Optional[int] = None,
+    additional_instructions: Optional[str] = None
+) -> str:
+    """
+    Generate customized academic synthesis prompt for report generation.
+    
+    Args:
+        citation_style: Citation format (apa, mla, chicago, ieee)
+        output_format: Desired output format (paper, review, proposal, abstract, presentation)
+        discipline: Academic discipline (stem, social, humanities, medical, general)
+        word_count_target: Target word count for the report
+        additional_instructions: Additional custom instructions to append
+    
+    Returns:
+        Customized academic synthesis prompt string
+    
+    Example:
+        >>> prompt = get_academic_synthesis_prompt(
+        ...     citation_style="apa",
+        ...     output_format="paper",
+        ...     discipline="stem",
+        ...     word_count_target=8000
+        ... )
+        >>> # Returns synthesis prompt with APA citations, paper format, STEM focus
+    """
+    # Start with base synthesis prompt
+    prompt = ACADEMIC_SYNTHESIS_PROMPT
+    
+    # Add citation style specification
+    citation_instructions = _get_citation_style_instructions(citation_style)
+    prompt += f"\n\n# Citation Style Specification\n\n{citation_instructions}"
+    
+    # Add output format modifiers if specified
+    if output_format:
+        format_modifiers = _get_format_modifiers(output_format)
+        if format_modifiers:
+            prompt += "\n\n# Output Format Requirements\n\n" + format_modifiers
+    
+    # Add discipline-specific modifiers if specified
+    if discipline:
+        discipline_modifiers = _get_discipline_modifiers(discipline)
+        if discipline_modifiers:
+            prompt += "\n\n# Discipline-Specific Requirements\n\n" + discipline_modifiers
+    
+    # Add word count target if specified
+    if word_count_target:
+        prompt += f"\n\n# Word Count Target\n\nAim for approximately {word_count_target:,} words in the final report. Adjust section lengths proportionally to meet this target while maintaining comprehensive coverage."
+    
+    # Add any additional custom instructions
+    if additional_instructions:
+        prompt += "\n\n# Additional Requirements\n\n" + additional_instructions
+    
+    return prompt
+
+
+def _get_citation_style_instructions(citation_style: str) -> str:
+    """
+    Get citation style-specific formatting instructions.
+    
+    Args:
+        citation_style: Citation format identifier
+    
+    Returns:
+        Citation style-specific instructions
+    """
+    styles = {
+        "apa": """
+**APA 7th Edition Style**:
+
+**In-Text Citations**:
+- Single author: (Smith, 2020)
+- Two authors: (Smith & Jones, 2020)
+- Three or more authors: (Smith et al., 2020)
+- Multiple sources: (Brown, 2019; Smith, 2020; Wilson, 2021)
+- Direct quote: (Smith, 2020, p. 45) or (Smith, 2020, pp. 45-47)
+- Author as part of sentence: Smith (2020) found that...
+
+**Reference List Format**:
+- Journal article: Author, A. A., & Author, B. B. (Year). Title of article. *Title of Journal*, *volume*(issue), pages. https://doi.org/xx.xxxx
+- Book: Author, A. A. (Year). *Title of book* (Edition). Publisher.
+- Chapter: Author, A. A. (Year). Title of chapter. In E. E. Editor (Ed.), *Title of book* (pp. xx-xx). Publisher.
+- Website: Author, A. A. (Year, Month Day). *Title of page*. Site Name. URL
+
+**Formatting**:
+- Alphabetize by first author's surname
+- Use hanging indent (first line flush left, subsequent lines indented)
+- Italicize journal titles and book titles
+- Use sentence case for article titles, title case for journal names
+""",
+        "mla": """
+**MLA 9th Edition Style**:
+
+**In-Text Citations**:
+- Single author: (Smith 45)
+- Two authors: (Smith and Jones 45)
+- Three or more authors: (Smith et al. 45)
+- No page number: (Smith)
+- Multiple sources: (Brown 23; Smith 45; Wilson 67)
+- Author as part of sentence: Smith argues that... (45)
+
+**Works Cited Format**:
+- Journal article: Author, First. "Title of Article." *Title of Journal*, vol. X, no. Y, Year, pp. xx-xx. DOI or URL.
+- Book: Author, First. *Title of Book*. Publisher, Year.
+- Chapter: Author, First. "Title of Chapter." *Title of Book*, edited by Editor Name, Publisher, Year, pp. xx-xx.
+- Website: Author, First. "Title of Page." *Site Name*, Date, URL. Accessed Day Month Year.
+
+**Formatting**:
+- Alphabetize by first author's surname
+- Use hanging indent
+- Italicize journal titles and book titles
+- Use title case for all titles
+- Include access date for web sources
+""",
+        "chicago": """
+**Chicago 17th Edition Style (Author-Date)**:
+
+**In-Text Citations**:
+- Single author: (Smith 2020, 45)
+- Two authors: (Smith and Jones 2020, 45)
+- Three or more authors: (Smith et al. 2020, 45)
+- Multiple sources: (Brown 2019; Smith 2020; Wilson 2021)
+- No page number: (Smith 2020)
+- Author as part of sentence: Smith (2020, 45) argues that...
+
+**Reference List Format**:
+- Journal article: Author, First Last. Year. "Title of Article." *Title of Journal* volume (issue): pages. DOI or URL.
+- Book: Author, First Last. Year. *Title of Book*. Place: Publisher.
+- Chapter: Author, First Last. Year. "Title of Chapter." In *Title of Book*, edited by Editor Name, pages. Place: Publisher.
+- Website: Author, First Last. Year. "Title of Page." Site Name. Accessed Month Day, Year. URL.
+
+**Formatting**:
+- Alphabetize by first author's surname
+- Use hanging indent
+- Italicize journal titles and book titles
+- Use title case for titles
+""",
+        "ieee": """
+**IEEE Style**:
+
+**In-Text Citations**:
+- Numbered citations in square brackets: [1]
+- Multiple sources: [1], [2], [3] or [1]-[3]
+- Same source multiple times: use same number [1]
+- Citation as part of sentence: "In [1], the authors demonstrate..."
+
+**Reference List Format**:
+- Journal article: [1] A. A. Author and B. B. Author, "Title of article," *Title of Journal*, vol. X, no. Y, pp. xx-xx, Month Year. DOI: xx.xxxx
+- Book: [1] A. A. Author, *Title of Book*, Edition. City: Publisher, Year.
+- Chapter: [1] A. A. Author, "Title of chapter," in *Title of Book*, E. E. Editor, Ed. City: Publisher, Year, pp. xx-xx.
+- Website: [1] A. A. Author. "Title of page." Site Name. URL (accessed Month Day, Year).
+
+**Formatting**:
+- Number references in order of appearance (not alphabetically)
+- Use square brackets for reference numbers
+- Italicize journal titles and book titles
+- Use title case for article titles
+- Abbreviate author first names to initials
+"""
+    }
+    
+    return styles.get(citation_style.lower(), styles["apa"])
