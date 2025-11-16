@@ -169,67 +169,206 @@ class AcademicConfig:
         Generate prompt modifiers based on discipline and output format.
         
         Returns:
-            Dictionary with keys: terminology, methodology_focus, structure, depth
+            Dictionary with keys: terminology, methodology_focus, structure, depth,
+            source_priorities, analysis_approach, writing_conventions
         """
         modifiers = {
             "terminology": "",
             "methodology_focus": "",
             "structure": "",
-            "depth": ""
+            "depth": "",
+            "source_priorities": "",
+            "analysis_approach": "",
+            "writing_conventions": ""
         }
         
         # Discipline-specific modifiers
         if self.discipline == Discipline.STEM:
             modifiers["terminology"] = (
                 "Use technical and scientific terminology appropriate for STEM fields. "
-                "Include mathematical notation, chemical formulas, and technical specifications where relevant."
+                "Include mathematical notation, chemical formulas, equations, and technical specifications where relevant. "
+                "Use SI units and standard scientific nomenclature. "
+                "Define specialized terms on first use."
             )
             modifiers["methodology_focus"] = (
                 "Focus on experimental design, quantitative methods, statistical analysis, "
-                "reproducibility, and empirical validation. Emphasize data-driven approaches."
+                "reproducibility, and empirical validation. Emphasize data-driven approaches, "
+                "hypothesis testing, control groups, and statistical significance. "
+                "Document experimental procedures, equipment, measurement precision, and error analysis. "
+                "Prioritize replicability and falsifiability of findings."
+            )
+            modifiers["source_priorities"] = (
+                "Prioritize peer-reviewed journals in relevant STEM fields (e.g., Nature, Science, IEEE, ACM). "
+                "Value experimental studies, systematic reviews, and meta-analyses. "
+                "Include preprints from arXiv, bioRxiv when discussing cutting-edge research. "
+                "Consider technical reports from research institutions and standards organizations."
+            )
+            modifiers["analysis_approach"] = (
+                "Emphasize quantitative analysis, statistical rigor, and empirical evidence. "
+                "Evaluate effect sizes, confidence intervals, and statistical power. "
+                "Assess reproducibility and replication studies. "
+                "Consider computational complexity, scalability, and performance metrics. "
+                "Analyze data quality, measurement validity, and experimental controls."
+            )
+            modifiers["writing_conventions"] = (
+                "Use passive voice when describing methods ('The solution was heated to 100°C'). "
+                "Present results objectively with precise numerical data. "
+                "Use figures, tables, and equations to present complex information. "
+                "Follow discipline-specific formatting (e.g., chemical notation, mathematical proofs). "
+                "Include detailed methodology sufficient for replication."
             )
         
         elif self.discipline == Discipline.SOCIAL:
             modifiers["terminology"] = (
                 "Use social science terminology including theoretical frameworks, "
                 "constructs, and discipline-specific concepts from psychology, sociology, "
-                "economics, or political science."
+                "economics, anthropology, or political science. "
+                "Define key constructs operationally. "
+                "Use appropriate statistical and methodological terminology (e.g., validity, reliability, generalizability)."
             )
             modifiers["methodology_focus"] = (
                 "Focus on qualitative and quantitative social research methods including "
-                "surveys, interviews, ethnography, statistical modeling, and mixed-methods approaches. "
-                "Emphasize validity, reliability, and generalizability."
+                "surveys, interviews, focus groups, ethnography, participant observation, "
+                "statistical modeling, and mixed-methods approaches. "
+                "Emphasize internal validity, external validity, construct validity, and reliability. "
+                "Consider sampling strategies, response rates, and representativeness. "
+                "Address ethical considerations for human subjects research including informed consent and confidentiality."
+            )
+            modifiers["source_priorities"] = (
+                "Prioritize peer-reviewed social science journals (e.g., American Sociological Review, "
+                "Psychological Science, American Economic Review). "
+                "Value longitudinal studies, randomized controlled trials, and large-scale surveys. "
+                "Include working papers from research institutions and policy organizations. "
+                "Consider government statistics and demographic data sources."
+            )
+            modifiers["analysis_approach"] = (
+                "Emphasize both quantitative and qualitative analysis as appropriate. "
+                "Evaluate theoretical frameworks and their empirical support. "
+                "Consider cultural context, social dynamics, and human behavior complexity. "
+                "Assess generalizability across populations and settings. "
+                "Analyze potential confounds, mediators, and moderators. "
+                "Consider practical significance alongside statistical significance."
+            )
+            modifiers["writing_conventions"] = (
+                "Balance theoretical discussion with empirical evidence. "
+                "Integrate participant quotes in qualitative research. "
+                "Present demographic characteristics of samples. "
+                "Discuss implications for policy, practice, and social understanding. "
+                "Address limitations related to sampling, measurement, and generalizability. "
+                "Consider ethical implications and social justice perspectives."
             )
         
         elif self.discipline == Discipline.HUMANITIES:
             modifiers["terminology"] = (
                 "Use humanities terminology including critical theory, hermeneutics, "
-                "textual analysis, and philosophical concepts. Emphasize interpretive frameworks."
+                "textual analysis, discourse analysis, and philosophical concepts. "
+                "Emphasize interpretive frameworks, rhetorical analysis, and cultural criticism. "
+                "Use discipline-specific terms from literary theory, philosophy, history, or cultural studies. "
+                "Define theoretical concepts and their intellectual genealogy."
             )
             modifiers["methodology_focus"] = (
-                "Focus on textual analysis, historical methods, critical interpretation, "
-                "comparative analysis, and theoretical frameworks. Emphasize close reading "
-                "and contextual understanding."
+                "Focus on textual analysis, close reading, historical methods, archival research, "
+                "critical interpretation, comparative analysis, and theoretical frameworks. "
+                "Emphasize contextual understanding, historical situatedness, and interpretive depth. "
+                "Consider primary sources, archival materials, and original texts. "
+                "Engage with scholarly debates and multiple interpretive perspectives. "
+                "Analyze rhetoric, narrative structure, symbolism, and meaning-making."
+            )
+            modifiers["source_priorities"] = (
+                "Prioritize peer-reviewed humanities journals and university press publications. "
+                "Value primary sources, original texts, and archival materials. "
+                "Include scholarly monographs and edited collections. "
+                "Consider historical documents, literary works, and cultural artifacts. "
+                "Engage with canonical works and contemporary scholarship."
+            )
+            modifiers["analysis_approach"] = (
+                "Emphasize interpretive analysis, critical reading, and theoretical engagement. "
+                "Consider multiple interpretive frameworks and scholarly perspectives. "
+                "Analyze historical context, cultural significance, and philosophical implications. "
+                "Evaluate arguments for logical coherence and textual support. "
+                "Engage with theoretical debates and intellectual traditions. "
+                "Consider aesthetic, ethical, and political dimensions of texts and artifacts."
+            )
+            modifiers["writing_conventions"] = (
+                "Develop sustained arguments with careful textual evidence. "
+                "Integrate quotations smoothly with analysis. "
+                "Engage with scholarly conversations and theoretical debates. "
+                "Use sophisticated vocabulary and complex sentence structures appropriately. "
+                "Balance close reading with broader theoretical claims. "
+                "Consider multiple interpretive possibilities and their implications."
             )
         
         elif self.discipline == Discipline.MEDICAL:
             modifiers["terminology"] = (
                 "Use medical and clinical terminology including anatomical terms, "
-                "diagnostic criteria, treatment protocols, and evidence-based medicine concepts."
+                "diagnostic criteria, treatment protocols, pharmacological nomenclature, "
+                "and evidence-based medicine concepts. "
+                "Use standard medical abbreviations appropriately (define on first use). "
+                "Include ICD codes, drug names (generic and brand), and clinical classifications. "
+                "Use precise medical language for conditions, procedures, and outcomes."
             )
             modifiers["methodology_focus"] = (
-                "Focus on clinical trials, systematic reviews, meta-analyses, case studies, "
-                "and evidence-based practice. Emphasize patient outcomes, safety, efficacy, "
-                "and clinical significance."
+                "Focus on clinical trials (RCTs), systematic reviews, meta-analyses, cohort studies, "
+                "case-control studies, and case reports following evidence hierarchy. "
+                "Emphasize evidence-based practice, patient outcomes, safety, efficacy, "
+                "and clinical significance. "
+                "Document inclusion/exclusion criteria, intervention protocols, and outcome measures. "
+                "Address ethical considerations including informed consent, patient safety, and IRB approval. "
+                "Consider number needed to treat (NNT), relative risk, and odds ratios."
+            )
+            modifiers["source_priorities"] = (
+                "Prioritize high-impact medical journals (e.g., NEJM, Lancet, JAMA, BMJ). "
+                "Value systematic reviews and meta-analyses from Cochrane Library. "
+                "Include clinical practice guidelines from professional organizations. "
+                "Consider FDA/EMA reports and drug safety databases. "
+                "Reference clinical trial registries (ClinicalTrials.gov) for ongoing research."
+            )
+            modifiers["analysis_approach"] = (
+                "Emphasize clinical significance alongside statistical significance. "
+                "Evaluate evidence quality using GRADE or similar frameworks. "
+                "Assess patient-centered outcomes (mortality, morbidity, quality of life). "
+                "Consider adverse effects, contraindications, and safety profiles. "
+                "Analyze cost-effectiveness and healthcare resource implications. "
+                "Evaluate applicability to different patient populations and clinical settings. "
+                "Consider comorbidities, drug interactions, and individual patient factors."
+            )
+            modifiers["writing_conventions"] = (
+                "Follow CONSORT, PRISMA, or other reporting guidelines as appropriate. "
+                "Present patient characteristics and baseline data clearly. "
+                "Report outcomes with confidence intervals and p-values. "
+                "Discuss clinical implications and practice recommendations. "
+                "Address limitations including sample size, follow-up duration, and generalizability. "
+                "Consider patient safety, ethical considerations, and informed decision-making. "
+                "Use tables for presenting clinical data and treatment comparisons."
             )
         
         else:  # GENERAL
             modifiers["terminology"] = (
-                "Use clear, accessible academic language appropriate for interdisciplinary audiences."
+                "Use clear, accessible academic language appropriate for interdisciplinary audiences. "
+                "Define specialized terms from any discipline on first use. "
+                "Balance technical precision with readability."
             )
             modifiers["methodology_focus"] = (
                 "Focus on research methods appropriate to the topic, including both "
-                "qualitative and quantitative approaches as relevant."
+                "qualitative and quantitative approaches as relevant. "
+                "Adapt methodology discussion to the specific research domain. "
+                "Emphasize rigor and appropriateness of methods for research questions."
+            )
+            modifiers["source_priorities"] = (
+                "Prioritize peer-reviewed academic sources across disciplines. "
+                "Value high-quality research regardless of specific field. "
+                "Include interdisciplinary perspectives when relevant."
+            )
+            modifiers["analysis_approach"] = (
+                "Adapt analytical approach to the research topic and available evidence. "
+                "Consider multiple disciplinary perspectives. "
+                "Emphasize critical thinking and evidence-based reasoning."
+            )
+            modifiers["writing_conventions"] = (
+                "Follow general academic writing conventions. "
+                "Maintain formal, objective tone. "
+                "Structure arguments clearly with appropriate evidence. "
+                "Make content accessible to readers from various academic backgrounds."
             )
         
         # Output format-specific modifiers
@@ -286,6 +425,39 @@ class AcademicConfig:
             )
         
         return modifiers
+    
+    def get_discipline_prompt_text(self) -> str:
+        """
+        Get formatted discipline-specific prompt text for integration into research prompts.
+        
+        Returns:
+            Formatted string with all discipline-specific guidelines
+        """
+        modifiers = self.get_prompt_modifiers()
+        
+        if self.discipline == Discipline.GENERAL:
+            return ""  # No specific modifiers for general discipline
+        
+        discipline_name = self.discipline.value.upper()
+        
+        prompt_text = f"\n## {discipline_name} Discipline Guidelines\n\n"
+        
+        if modifiers["terminology"]:
+            prompt_text += f"**Terminology**: {modifiers['terminology']}\n\n"
+        
+        if modifiers["methodology_focus"]:
+            prompt_text += f"**Methodology Focus**: {modifiers['methodology_focus']}\n\n"
+        
+        if modifiers["source_priorities"]:
+            prompt_text += f"**Source Priorities**: {modifiers['source_priorities']}\n\n"
+        
+        if modifiers["analysis_approach"]:
+            prompt_text += f"**Analysis Approach**: {modifiers['analysis_approach']}\n\n"
+        
+        if modifiers["writing_conventions"]:
+            prompt_text += f"**Writing Conventions**: {modifiers['writing_conventions']}\n\n"
+        
+        return prompt_text
     
     def get_report_structure(self) -> List[str]:
         """

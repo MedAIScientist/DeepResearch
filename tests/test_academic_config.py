@@ -130,10 +130,16 @@ class TestAcademicConfig(unittest.TestCase):
         self.assertIn("methodology_focus", modifiers)
         self.assertIn("structure", modifiers)
         self.assertIn("depth", modifiers)
+        self.assertIn("source_priorities", modifiers)
+        self.assertIn("analysis_approach", modifiers)
+        self.assertIn("writing_conventions", modifiers)
         
         # Check STEM-specific content
         self.assertIn("technical", modifiers["terminology"].lower())
         self.assertIn("experimental", modifiers["methodology_focus"].lower())
+        self.assertIn("reproducibility", modifiers["methodology_focus"].lower())
+        self.assertIn("quantitative", modifiers["analysis_approach"].lower())
+        self.assertIn("passive voice", modifiers["writing_conventions"].lower())
     
     def test_get_prompt_modifiers_social(self):
         """Test prompt modifiers for social sciences discipline"""
@@ -142,6 +148,9 @@ class TestAcademicConfig(unittest.TestCase):
         
         self.assertIn("social science", modifiers["terminology"].lower())
         self.assertIn("qualitative", modifiers["methodology_focus"].lower())
+        self.assertIn("validity", modifiers["methodology_focus"].lower())
+        self.assertIn("reliability", modifiers["methodology_focus"].lower())
+        self.assertIn("cultural context", modifiers["analysis_approach"].lower())
     
     def test_get_prompt_modifiers_humanities(self):
         """Test prompt modifiers for humanities discipline"""
@@ -150,6 +159,9 @@ class TestAcademicConfig(unittest.TestCase):
         
         self.assertIn("humanities", modifiers["terminology"].lower())
         self.assertIn("textual", modifiers["methodology_focus"].lower())
+        self.assertIn("hermeneutics", modifiers["terminology"].lower())
+        self.assertIn("interpretive", modifiers["analysis_approach"].lower())
+        self.assertIn("primary sources", modifiers["source_priorities"].lower())
     
     def test_get_prompt_modifiers_medical(self):
         """Test prompt modifiers for medical discipline"""
@@ -158,6 +170,9 @@ class TestAcademicConfig(unittest.TestCase):
         
         self.assertIn("medical", modifiers["terminology"].lower())
         self.assertIn("clinical", modifiers["methodology_focus"].lower())
+        self.assertIn("evidence-based", modifiers["methodology_focus"].lower())
+        self.assertIn("patient outcomes", modifiers["methodology_focus"].lower())
+        self.assertIn("clinical significance", modifiers["analysis_approach"].lower())
     
     def test_get_prompt_modifiers_paper_format(self):
         """Test prompt modifiers for paper output format"""
@@ -355,6 +370,34 @@ class TestAcademicConfig(unittest.TestCase):
         for discipline in disciplines:
             config = AcademicConfig(discipline=discipline)
             self.assertEqual(config.discipline, discipline)
+    
+    def test_get_discipline_prompt_text_stem(self):
+        """Test discipline prompt text generation for STEM"""
+        config = AcademicConfig(discipline=Discipline.STEM)
+        prompt_text = config.get_discipline_prompt_text()
+        
+        self.assertIn("STEM", prompt_text)
+        self.assertIn("Terminology", prompt_text)
+        self.assertIn("Methodology Focus", prompt_text)
+        self.assertIn("Source Priorities", prompt_text)
+        self.assertIn("Analysis Approach", prompt_text)
+        self.assertIn("Writing Conventions", prompt_text)
+    
+    def test_get_discipline_prompt_text_general(self):
+        """Test discipline prompt text generation for general (should be empty)"""
+        config = AcademicConfig(discipline=Discipline.GENERAL)
+        prompt_text = config.get_discipline_prompt_text()
+        
+        self.assertEqual(prompt_text, "")
+    
+    def test_get_discipline_prompt_text_medical(self):
+        """Test discipline prompt text generation for medical"""
+        config = AcademicConfig(discipline=Discipline.MEDICAL)
+        prompt_text = config.get_discipline_prompt_text()
+        
+        self.assertIn("MEDICAL", prompt_text)
+        self.assertIn("clinical", prompt_text.lower())
+        self.assertIn("evidence-based", prompt_text.lower())
 
 
 if __name__ == "__main__":
