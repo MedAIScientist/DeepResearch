@@ -310,28 +310,54 @@ class Citation:
     
     def _format_author_apa(self, author: str) -> str:
         """Format author name for APA style (Last, F. M.)"""
-        parts = author.strip().split()
-        if len(parts) == 0:
+        author = author.strip()
+        if not author:
             return ""
-        elif len(parts) == 1:
-            return parts[0]
+        
+        # Check if already in "Last, First" format
+        if ',' in author:
+            parts = author.split(',', 1)
+            last = parts[0].strip()
+            first = parts[1].strip() if len(parts) > 1 else ""
+            if first:
+                # Extract initials from first name
+                first_parts = first.split()
+                initials = " ".join([f"{p[0]}." for p in first_parts if p])
+                return f"{last}, {initials}"
+            return last
         else:
-            # Last name is last part, rest are first/middle names
-            last = parts[-1]
-            initials = " ".join([f"{p[0]}." for p in parts[:-1] if p])
-            return f"{last}, {initials}"
+            # Assume "First Last" format
+            parts = author.split()
+            if len(parts) == 0:
+                return ""
+            elif len(parts) == 1:
+                return parts[0]
+            else:
+                # Last name is last part, rest are first/middle names
+                last = parts[-1]
+                initials = " ".join([f"{p[0]}." for p in parts[:-1] if p])
+                return f"{last}, {initials}"
     
     def _format_author_mla(self, author: str) -> str:
         """Format author name for MLA style (Last, First)"""
-        parts = author.strip().split()
-        if len(parts) == 0:
+        author = author.strip()
+        if not author:
             return ""
-        elif len(parts) == 1:
-            return parts[0]
+        
+        # Check if already in "Last, First" format
+        if ',' in author:
+            return author  # Already in correct format
         else:
-            last = parts[-1]
-            first = " ".join(parts[:-1])
-            return f"{last}, {first}"
+            # Assume "First Last" format
+            parts = author.split()
+            if len(parts) == 0:
+                return ""
+            elif len(parts) == 1:
+                return parts[0]
+            else:
+                last = parts[-1]
+                first = " ".join(parts[:-1])
+                return f"{last}, {first}"
     
     def _format_author_chicago(self, author: str) -> str:
         """Format author name for Chicago style (Last, First)"""
@@ -339,15 +365,32 @@ class Citation:
     
     def _format_author_ieee(self, author: str) -> str:
         """Format author name for IEEE style (F. M. Last)"""
-        parts = author.strip().split()
-        if len(parts) == 0:
+        author = author.strip()
+        if not author:
             return ""
-        elif len(parts) == 1:
-            return parts[0]
+        
+        # Check if in "Last, First" format
+        if ',' in author:
+            parts = author.split(',', 1)
+            last = parts[0].strip()
+            first = parts[1].strip() if len(parts) > 1 else ""
+            if first:
+                # Extract initials from first name
+                first_parts = first.split()
+                initials = " ".join([f"{p[0]}." for p in first_parts if p])
+                return f"{initials} {last}"
+            return last
         else:
-            last = parts[-1]
-            initials = " ".join([f"{p[0]}." for p in parts[:-1] if p])
-            return f"{initials} {last}"
+            # Assume "First Last" format
+            parts = author.split()
+            if len(parts) == 0:
+                return ""
+            elif len(parts) == 1:
+                return parts[0]
+            else:
+                last = parts[-1]
+                initials = " ".join([f"{p[0]}." for p in parts[:-1] if p])
+                return f"{initials} {last}"
     
     def get_inline_citation(self, style: CitationStyle = CitationStyle.APA, page: Optional[str] = None) -> str:
         """
@@ -360,16 +403,26 @@ class Citation:
         Returns:
             Inline citation string (e.g., "(Smith, 2020)" for APA)
         """
+        def extract_last_name(author: str) -> str:
+            """Extract last name from author string"""
+            author = author.strip()
+            if ',' in author:
+                # "Last, First" format
+                return author.split(',')[0].strip()
+            else:
+                # "First Last" format
+                return author.split()[-1] if author.split() else author
+        
         if style == CitationStyle.APA or style == CitationStyle.CHICAGO:
             # (Author, Year) or (Author, Year, p. X)
             if not self.authors:
                 author = "[No author]"
             elif len(self.authors) == 1:
-                author = self.authors[0].split()[-1]  # Last name
+                author = extract_last_name(self.authors[0])
             elif len(self.authors) == 2:
-                author = f"{self.authors[0].split()[-1]} & {self.authors[1].split()[-1]}"
+                author = f"{extract_last_name(self.authors[0])} & {extract_last_name(self.authors[1])}"
             else:
-                author = f"{self.authors[0].split()[-1]} et al."
+                author = f"{extract_last_name(self.authors[0])} et al."
             
             year = self.year if self.year else "n.d."
             citation = f"({author}, {year}"
@@ -383,9 +436,9 @@ class Citation:
             if not self.authors:
                 author = "[No author]"
             elif len(self.authors) == 1:
-                author = self.authors[0].split()[-1]
+                author = extract_last_name(self.authors[0])
             else:
-                author = f"{self.authors[0].split()[-1]} et al."
+                author = f"{extract_last_name(self.authors[0])} et al."
             
             if page:
                 return f"({author} {page})"
@@ -697,7 +750,13 @@ class CitationManager:
             author_key = "zzz"  # Sort no-author citations last
         else:
             # Use last name of first author
-            author_key = citation.authors[0].split()[-1].lower()
+            author = citation.authors[0].strip()
+            if ',' in author:
+                # "Last, First" format
+                author_key = author.split(',')[0].strip().lower()
+            else:
+                # "First Last" format
+                author_key = author.split()[-1].lower() if author.split() else author.lower()
         
         year_key = str(citation.year) if citation.year else "9999"
         title_key = citation.title.lower()
@@ -792,7 +851,13 @@ class CitationManager:
         
         # Create readable ID
         if authors:
-            author_part = authors[0].split()[-1].lower()[:10]  # Last name of first author
+            author = authors[0].strip()
+            if ',' in author:
+                # "Last, First" format
+                author_part = author.split(',')[0].strip().lower()[:10]
+            else:
+                # "First Last" format
+                author_part = author.split()[-1].lower()[:10] if author.split() else author.lower()[:10]
         else:
             author_part = "noauthor"
         
