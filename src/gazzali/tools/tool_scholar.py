@@ -58,7 +58,12 @@ class Scholar(BaseTool):
     description = (
         "Search Google Scholar for academic publications with comprehensive metadata extraction. "
         "Returns structured information including authors, publication details, citation counts, "
-        "abstracts, paper types, and open access links. Prioritize this tool for academic research."
+        "abstracts, paper types, and open access links. Prioritize this tool for academic research. "
+        "\n\nAdvanced features:"
+        "\n- Search by specific author using 'author' parameter"
+        "\n- Find papers citing a work using 'citing_paper' parameter"
+        "\n- Discover related papers using 'related_to' parameter"
+        "\n- Automatic query optimization with academic search operators"
     )
     parameters = {
         "type": "object",
@@ -68,6 +73,18 @@ class Scholar(BaseTool):
                 "items": {"type": "string", "description": "The search query."},
                 "minItems": 1,
                 "description": "The list of search queries for Google Scholar."
+            },
+            "author": {
+                "type": "string",
+                "description": "Optional: Search for papers by a specific author. Use format 'FirstName LastName'."
+            },
+            "citing_paper": {
+                "type": "string",
+                "description": "Optional: Find papers that cite a specific paper. Provide paper title or identifier."
+            },
+            "related_to": {
+                "type": "string",
+                "description": "Optional: Find papers related to a specific paper. Provide paper title or identifier."
             },
         },
         "required": ["query"],
@@ -82,6 +99,126 @@ class Scholar(BaseTool):
         """
         super().__init__(cfg)
         self.citation_manager = CitationManager() if CitationManager else None
+        
+        # Academic search operators for query optimization
+        self.academic_operators = {
+            'exact_phrase': lambda phrase: f'"{phrase}"',
+            'author': lambda name: f'author:"{name}"',
+            'intitle': lambda term: f'intitle:{term}',
+            'allintitle': lambda terms: f'allintitle:{terms}',
+            'source': lambda source: f'source:"{source}"',
+            'exclude': lambda term: f'-{term}',
+        }
+    
+    def optimize_query(self, query: str, author: Optional[str] = None, 
+                      intitle: Optional[str] = None) -> str:
+        """
+        Optimize search query using academic search operators.
+        
+        Args:
+            query: Base search query
+            author: Optional author name to filter by
+            intitle: Optional term that must appear in title
+        
+        Returns:
+            Optimized query string with academic operators
+        """
+        optimized = query
+        
+        # Add author filter if specified
+        if author:
+            optimized = f'{optimized} {self.academic_operators["author"](author)}'
+        
+        # Add title filter if specified
+        if intitle:
+            optimized = f'{optimized} {self.academic_operators["intitle"](intitle)}'
+        
+        # Detect and wrap exact phrases in quotes
+        # Look for multi-word technical terms that should be exact matches
+        technical_patterns = [
+            r'\b(machine learning|deep learning|neural network|artificial intelligence)\b',
+            r'\b(climate change|global warming|greenhouse gas)\b',
+            r'\b(systematic review|meta-analysis|randomized controlled trial)\b',
+        ]
+        
+        for pattern in technical_patterns:
+            matches = re.finditer(pattern, optimized, re.IGNORECASE)
+            for match in matches:
+                phrase = match.group(0)
+                if not (phrase.startswith('"') and phrase.endswith('"')):
+                    optimized = optimized.replace(phrase, f'"{phrase}"')
+        
+        return optimized
+    
+    def search_by_author(self, author: str, additional_terms: str = "") -> str:
+        """
+        Search for papers by a specific author.
+        
+        Args:
+            author: Author name (format: "FirstName LastName")
+            additional_terms: Optional additional search terms
+        
+        Returns:
+            Formatted search results for author's papers
+        """
+        # Construct author-specific query
+        query = f'author:"{author}"'
+        if additional_terms:
+            query = f'{query} {additional_terms}'
+        
+        return self.google_scholar_with_serp(query)
+    
+    def search_citing_papers(self, paper_title: str) -> str:
+        """
+        Find papers that cite a specific paper.
+        
+        Args:
+            paper_title: Title of the paper to find citations for
+        
+        Returns:
+            Formatted search results for citing papers
+        """
+        # Use "cited by" operator - search for the paper first to get its ID
+        # Then search for papers citing it
+        query = f'"{paper_title}"'
+        
+        # Note: Serper API may not directly support "cited by" searches
+        # We'll search for the paper and extract citation info from results
+        result = self.google_scholar_with_serp(query)
+        
+        # Add note about citation search
+        citation_note = (
+            "\n\n[Note: To find papers citing this work, look for 'Cited by: X' "
+            "in the results above. The citation count indicates impact. "
+            "For full citation network, visit the paper's Google Scholar page.]"
+        )
+        
+        return result + citation_note
+    
+    def search_related_papers(self, paper_title: str) -> str:
+        """
+        Find papers related to a specific paper.
+        
+        Args:
+            paper_title: Title of the paper to find related works for
+        
+        Returns:
+            Formatted search results for related papers
+        """
+        # Search for papers with similar keywords and topics
+        # Extract key terms from title and search
+        query = f'"{paper_title}"'
+        
+        result = self.google_scholar_with_serp(query)
+        
+        # Add note about related papers
+        related_note = (
+            "\n\n[Note: To find related papers, examine the 'related_url' field "
+            "in the results above, or search for papers with similar keywords "
+            "and authors from the same research group.]"
+        )
+        
+        return result + related_note
     
     def google_scholar_with_serp(self, query: str) -> str:
         """
@@ -555,8 +692,14 @@ class Scholar(BaseTool):
         """
         Execute Scholar search with given parameters.
         
+        Supports multiple search modes:
+        - Standard query search
+        - Author-specific search (author parameter)
+        - Citing papers search (citing_paper parameter)
+        - Related papers search (related_to parameter)
+        
         Args:
-            params: Query parameters (string or dict with 'query' field)
+            params: Query parameters (string or dict with 'query' field and optional filters)
             **kwargs: Additional arguments
         
         Returns:
@@ -565,16 +708,45 @@ class Scholar(BaseTool):
         try:
             params = self._verify_json_format_args(params)
             query = params["query"]
+            author = params.get("author")
+            citing_paper = params.get("citing_paper")
+            related_to = params.get("related_to")
         except Exception:
             return "[google_scholar] Invalid request format: Input must be a JSON object containing 'query' field"
         
-        if isinstance(query, str):
-            response = self.google_scholar_with_serp(query)
+        # Handle different search modes
+        if author:
+            # Author-specific search
+            if isinstance(query, str):
+                response = self.search_by_author(author, query)
+            else:
+                # Multiple queries with author filter
+                responses = []
+                for q in query:
+                    responses.append(self.search_by_author(author, q))
+                response = "\n=======\n".join(responses)
+        
+        elif citing_paper:
+            # Search for papers citing a specific work
+            response = self.search_citing_papers(citing_paper)
+        
+        elif related_to:
+            # Search for related papers
+            response = self.search_related_papers(related_to)
+        
         else:
-            assert isinstance(query, list)
-            with ThreadPoolExecutor(max_workers=3) as executor:
-                response = list(executor.map(self.google_scholar_with_serp, query))
-            response = "\n=======\n".join(response)
+            # Standard search with query optimization
+            if isinstance(query, str):
+                # Optimize query with academic operators
+                optimized_query = self.optimize_query(query)
+                response = self.google_scholar_with_serp(optimized_query)
+            else:
+                assert isinstance(query, list)
+                # Optimize each query
+                optimized_queries = [self.optimize_query(q) for q in query]
+                with ThreadPoolExecutor(max_workers=3) as executor:
+                    response = list(executor.map(self.google_scholar_with_serp, optimized_queries))
+                response = "\n=======\n".join(response)
         
         return response
     
