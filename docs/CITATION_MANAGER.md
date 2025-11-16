@@ -137,7 +137,45 @@ scholar_result = {
 # Extract citation
 citation = manager.extract_from_scholar_result(scholar_result)
 if citation:
-    manager.add_citation(citation)
+    citation_id = manager.add_citation(citation)
+```
+
+### Extracting from Web Pages
+
+```python
+# Extract citation from HTML content
+html_content = """
+<html>
+<head>
+    <meta name="citation_title" content="Machine Learning Basics">
+    <meta name="citation_author" content="Johnson, Alice">
+    <meta name="citation_author" content="Smith, Bob">
+    <meta name="citation_publication_date" content="2023">
+    <meta name="citation_journal_title" content="AI Review">
+    <meta name="DC.Identifier" content="doi:10.1234/air.2023.123">
+</head>
+</html>
+"""
+
+citation = manager.extract_from_webpage(html_content, "https://example.com/article")
+if citation:
+    citation_id = manager.add_citation(citation)
+```
+
+### Extracting from Plain Text
+
+```python
+# Extract citation from unstructured text (fallback method)
+text = """
+"Deep Learning Applications in Healthcare"
+by Anderson, Michael, Williams, Sarah
+Published in Medical AI Journal (2022)
+doi:10.5678/maj.2022.456
+"""
+
+citation = manager.extract_from_text(text, url="https://example.com")
+if citation:
+    citation_id = manager.add_citation(citation)
 ```
 
 ### Exporting Citations
@@ -232,6 +270,74 @@ Citation IDs are automatically generated using:
 
 This creates human-readable yet unique identifiers.
 
+## Citation Extraction
+
+The Citation Manager provides three extraction methods for different source types:
+
+### 1. Scholar Result Extraction (`extract_from_scholar_result`)
+
+Extracts citation metadata from Google Scholar search results.
+
+**Expected Input Format**:
+```python
+{
+    'title': str,
+    'authors': str (comma-separated) or list,
+    'year': str or int,
+    'venue': str,
+    'citation_count': int (optional),
+    'url': str,
+    'abstract': str (optional),
+    'doi': str (optional),
+    'pdf_url': str (optional)
+}
+```
+
+**Features**:
+- Parses comma-separated author strings
+- Detects venue type (journal, conference, preprint)
+- Extracts citation counts and abstracts
+- Handles missing fields gracefully
+
+### 2. Webpage Extraction (`extract_from_webpage`)
+
+Extracts citation metadata from HTML content using meta tags and heuristics.
+
+**Extraction Strategies**:
+- **Title**: Checks citation_title, DC.Title, og:title, twitter:title, <title>, <h1>
+- **Authors**: Checks citation_author (multiple), DC.Creator, author meta tags
+- **Year**: Checks citation_publication_date, citation_year, DC.Date, article:published_time
+- **DOI**: Checks citation_doi, DC.Identifier, doi: patterns in content
+
+**Supported Meta Tag Standards**:
+- Citation meta tags (used by academic publishers)
+- Dublin Core (DC.*) meta tags
+- Open Graph (og:*) meta tags
+- Twitter Card meta tags
+
+### 3. Plain Text Extraction (`extract_from_text`)
+
+Fallback method for extracting citations from unstructured text using regex patterns.
+
+**Extraction Patterns**:
+- **Title**: Quoted text, "Title:" prefix, first substantial line
+- **Authors**: "Last, First" format, "by Author" patterns
+- **Year**: Years in parentheses, after "published/year/date:", 4-digit years
+- **DOI**: Standard DOI patterns (10.xxxx/...)
+
+**Use Cases**:
+- Parsing citation strings
+- Extracting from plain text documents
+- Fallback when HTML parsing fails
+
+### Extraction Error Handling
+
+All extraction methods:
+- Return `None` if extraction fails completely
+- Create incomplete citations if some metadata is missing
+- Log errors without crashing
+- Preserve URL even if other fields are missing
+
 ## Incomplete Citations
 
 Citations are flagged as incomplete when missing critical metadata:
@@ -243,6 +349,7 @@ Incomplete citations are:
 - Marked with `is_incomplete = True`
 - Appended with `[Incomplete citation]` in formatted output
 - Still tracked and included in bibliography
+- Counted in statistics for quality monitoring
 
 ## Integration with Research Workflow
 

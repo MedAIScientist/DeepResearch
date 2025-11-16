@@ -959,6 +959,7 @@ class CitationManager:
         - Title (from <title>, <h1>, or meta tags)
         - Authors (from meta tags or common patterns)
         - Date (from meta tags or content)
+        - DOI (from content or meta tags)
         
         Args:
             content: HTML or text content of webpage
@@ -979,6 +980,9 @@ class CitationManager:
             # Extract year
             year = self._extract_year_from_html(content)
             
+            # Extract DOI if present
+            doi = self._extract_doi_from_content(content)
+            
             # Extract venue (domain name)
             venue = self._extract_domain(url)
             
@@ -989,6 +993,7 @@ class CitationManager:
                 year=year,
                 venue=venue,
                 url=url,
+                doi=doi,
                 venue_type=VenueType.WEB,
             )
             
@@ -999,16 +1004,34 @@ class CitationManager:
             return None
     
     def _extract_title_from_html(self, content: str) -> str:
-        """Extract title from HTML content"""
-        # Try meta title
+        """Extract title from HTML content using multiple strategies"""
+        # Try citation_title meta tag (academic papers)
+        match = re.search(r'<meta[^>]*name=["\']citation_title["\'][^>]*content=["\']([^"\']+)["\']', content, re.IGNORECASE)
+        if match:
+            return match.group(1).strip()
+        
+        # Try DC.Title meta tag (Dublin Core)
+        match = re.search(r'<meta[^>]*name=["\']DC\.Title["\'][^>]*content=["\']([^"\']+)["\']', content, re.IGNORECASE)
+        if match:
+            return match.group(1).strip()
+        
+        # Try og:title meta tag (Open Graph)
         match = re.search(r'<meta[^>]*property=["\']og:title["\'][^>]*content=["\']([^"\']+)["\']', content, re.IGNORECASE)
+        if match:
+            return match.group(1).strip()
+        
+        # Try twitter:title meta tag
+        match = re.search(r'<meta[^>]*name=["\']twitter:title["\'][^>]*content=["\']([^"\']+)["\']', content, re.IGNORECASE)
         if match:
             return match.group(1).strip()
         
         # Try <title> tag
         match = re.search(r'<title[^>]*>([^<]+)</title>', content, re.IGNORECASE)
         if match:
-            return match.group(1).strip()
+            title = match.group(1).strip()
+            # Clean up common title suffixes
+            title = re.sub(r'\s*[\|\-]\s*[^|]*$', '', title)
+            return title.strip()
         
         # Try <h1> tag
         match = re.search(r'<h1[^>]*>([^<]+)</h1>', content, re.IGNORECASE)
@@ -1018,39 +1041,97 @@ class CitationManager:
         return ""
     
     def _extract_authors_from_html(self, content: str) -> List[str]:
-        """Extract authors from HTML content"""
+        """Extract authors from HTML content using multiple strategies"""
         authors = []
         
-        # Try meta author tag
+        # Try citation_author meta tags (can be multiple)
+        matches = re.findall(r'<meta[^>]*name=["\']citation_author["\'][^>]*content=["\']([^"\']+)["\']', content, re.IGNORECASE)
+        if matches:
+            return [m.strip() for m in matches if m.strip()]
+        
+        # Try DC.Creator meta tag (Dublin Core)
+        match = re.search(r'<meta[^>]*name=["\']DC\.Creator["\'][^>]*content=["\']([^"\']+)["\']', content, re.IGNORECASE)
+        if match:
+            author_str = match.group(1).strip()
+            authors = [a.strip() for a in author_str.split(';') if a.strip()]
+            if authors:
+                return authors
+        
+        # Try standard author meta tag
         match = re.search(r'<meta[^>]*name=["\']author["\'][^>]*content=["\']([^"\']+)["\']', content, re.IGNORECASE)
         if match:
             author_str = match.group(1).strip()
-            authors = [a.strip() for a in author_str.split(',') if a.strip()]
+            # Try different separators
+            for sep in [',', ';', ' and ', '&']:
+                if sep in author_str:
+                    authors = [a.strip() for a in author_str.split(sep) if a.strip()]
+                    if authors:
+                        return authors
+            # Single author
+            if author_str:
+                return [author_str]
         
         return authors
     
     def _extract_year_from_html(self, content: str) -> Optional[int]:
-        """Extract publication year from HTML content"""
-        # Try meta date tags
-        patterns = [
-            r'<meta[^>]*property=["\']article:published_time["\'][^>]*content=["\'](\d{4})',
-            r'<meta[^>]*name=["\']date["\'][^>]*content=["\'](\d{4})',
-            r'<time[^>]*datetime=["\'](\d{4})',
-        ]
-        
-        for pattern in patterns:
-            match = re.search(pattern, content, re.IGNORECASE)
-            if match:
-                try:
-                    return int(match.group(1))
-                except ValueError:
-                    pass
-        
-        # Try to find year in content (2000-2099)
-        match = re.search(r'\b(20\d{2})\b', content)
+        """Extract publication year from HTML content using multiple strategies"""
+        # Try citation_publication_date meta tag (academic papers)
+        match = re.search(r'<meta[^>]*name=["\']citation_publication_date["\'][^>]*content=["\'](\d{4})', content, re.IGNORECASE)
         if match:
             try:
-                return int(match.group(1))
+                year = int(match.group(1))
+                if 1900 <= year <= 2100:
+                    return year
+            except ValueError:
+                pass
+        
+        # Try citation_year meta tag
+        match = re.search(r'<meta[^>]*name=["\']citation_year["\'][^>]*content=["\'](\d{4})["\']', content, re.IGNORECASE)
+        if match:
+            try:
+                year = int(match.group(1))
+                if 1900 <= year <= 2100:
+                    return year
+            except ValueError:
+                pass
+        
+        # Try DC.Date meta tag (Dublin Core)
+        match = re.search(r'<meta[^>]*name=["\']DC\.Date["\'][^>]*content=["\'](\d{4})', content, re.IGNORECASE)
+        if match:
+            try:
+                year = int(match.group(1))
+                if 1900 <= year <= 2100:
+                    return year
+            except ValueError:
+                pass
+        
+        # Try article:published_time meta tag
+        match = re.search(r'<meta[^>]*property=["\']article:published_time["\'][^>]*content=["\'](\d{4})', content, re.IGNORECASE)
+        if match:
+            try:
+                year = int(match.group(1))
+                if 1900 <= year <= 2100:
+                    return year
+            except ValueError:
+                pass
+        
+        # Try standard date meta tag
+        match = re.search(r'<meta[^>]*name=["\']date["\'][^>]*content=["\'](\d{4})', content, re.IGNORECASE)
+        if match:
+            try:
+                year = int(match.group(1))
+                if 1900 <= year <= 2100:
+                    return year
+            except ValueError:
+                pass
+        
+        # Try time tag with datetime attribute
+        match = re.search(r'<time[^>]*datetime=["\'](\d{4})', content, re.IGNORECASE)
+        if match:
+            try:
+                year = int(match.group(1))
+                if 1900 <= year <= 2100:
+                    return year
             except ValueError:
                 pass
         
@@ -1062,6 +1143,168 @@ class CitationManager:
         if match:
             return match.group(1)
         return url
+    
+    def _extract_doi_from_content(self, content: str) -> Optional[str]:
+        """
+        Extract DOI from content using regex patterns.
+        
+        Args:
+            content: HTML or text content
+        
+        Returns:
+            DOI string if found, None otherwise
+        """
+        # Common DOI patterns
+        patterns = [
+            r'doi:\s*(10\.\d{4,}/[^\s<>"]+)',
+            r'https?://doi\.org/(10\.\d{4,}/[^\s<>"]+)',
+            r'https?://dx\.doi\.org/(10\.\d{4,}/[^\s<>"]+)',
+            r'<meta[^>]*name=["\']citation_doi["\'][^>]*content=["\']([^"\']+)["\']',
+            r'<meta[^>]*name=["\']DC\.Identifier["\'][^>]*content=["\']doi:(10\.\d{4,}/[^\s<>"]+)["\']',
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, content, re.IGNORECASE)
+            if match:
+                doi = match.group(1).strip()
+                # Clean up DOI (remove trailing punctuation)
+                doi = re.sub(r'[.,;:)\]]+$', '', doi)
+                return doi
+        
+        return None
+    
+    def extract_from_text(self, text: str, url: str = "") -> Optional[Citation]:
+        """
+        Extract citation from plain text using regex patterns.
+        
+        This is a fallback method that attempts to extract citation information
+        from unstructured text using common citation patterns.
+        
+        Args:
+            text: Plain text containing citation information
+            url: Optional URL associated with the citation
+        
+        Returns:
+            Citation object or None if extraction fails
+        """
+        try:
+            # Try to extract title (usually in quotes or after common patterns)
+            title = self._extract_title_from_text(text)
+            
+            # Try to extract authors
+            authors = self._extract_authors_from_text(text)
+            
+            # Try to extract year
+            year = self._extract_year_from_text(text)
+            
+            # Try to extract DOI
+            doi = self._extract_doi_from_content(text)
+            
+            # If we have at least a title, create citation
+            if title:
+                citation = self.create_citation_from_metadata(
+                    title=title,
+                    authors=authors,
+                    year=year,
+                    venue="",
+                    url=url,
+                    doi=doi,
+                    venue_type=VenueType.OTHER,
+                )
+                return citation
+            
+            return None
+        
+        except Exception as e:
+            print(f"Error extracting citation from text: {e}")
+            return None
+    
+    def _extract_title_from_text(self, text: str) -> str:
+        """
+        Extract title from plain text.
+        
+        Looks for titles in quotes or after common patterns.
+        """
+        # Try quoted text (common in citations)
+        patterns = [
+            r'"([^"]{10,200})"',  # Text in double quotes
+            r"'([^']{10,200})'",  # Text in single quotes
+            r'Title:\s*([^\n]{10,200})',  # After "Title:"
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                return match.group(1).strip()
+        
+        # Fallback: take first substantial line
+        lines = text.split('\n')
+        for line in lines:
+            line = line.strip()
+            if len(line) > 10 and not line.startswith('http'):
+                return line
+        
+        return ""
+    
+    def _extract_authors_from_text(self, text: str) -> List[str]:
+        """
+        Extract authors from plain text.
+        
+        Looks for author patterns like "Last, First" or "First Last".
+        """
+        authors = []
+        
+        # Pattern for "Last, First" format
+        pattern1 = r'\b([A-Z][a-z]+),\s+([A-Z][a-z]+(?:\s+[A-Z]\.)?)\b'
+        matches = re.findall(pattern1, text)
+        for match in matches[:5]:  # Limit to first 5 matches
+            authors.append(f"{match[0]}, {match[1]}")
+        
+        if authors:
+            return authors
+        
+        # Pattern for "First Last" format (after "by" or "Author:")
+        pattern2 = r'(?:by|Author[s]?:)\s+([A-Z][a-z]+\s+[A-Z][a-z]+(?:,\s+[A-Z][a-z]+\s+[A-Z][a-z]+)*)'
+        match = re.search(pattern2, text, re.IGNORECASE)
+        if match:
+            author_str = match.group(1)
+            authors = [a.strip() for a in author_str.split(',') if a.strip()]
+        
+        return authors
+    
+    def _extract_year_from_text(self, text: str) -> Optional[int]:
+        """
+        Extract publication year from plain text.
+        
+        Looks for 4-digit years in common contexts.
+        """
+        # Look for year in parentheses (common in citations)
+        match = re.search(r'\((\d{4})\)', text)
+        if match:
+            try:
+                year = int(match.group(1))
+                if 1900 <= year <= 2100:
+                    return year
+            except ValueError:
+                pass
+        
+        # Look for year after common patterns
+        patterns = [
+            r'(?:published|year|date):\s*(\d{4})',
+            r'\b(19\d{2}|20\d{2})\b',  # Any year 1900-2099
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                try:
+                    year = int(match.group(1))
+                    if 1900 <= year <= 2100:
+                        return year
+                except ValueError:
+                    pass
+        
+        return None
     
     def get_statistics(self) -> Dict[str, Any]:
         """
