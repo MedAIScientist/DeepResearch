@@ -27,6 +27,8 @@ from .workflows.templates import (
     get_workflow_by_name,
     list_available_workflows,
 )
+from .progress_tracker import ProgressTracker, ResearchStage
+from .progress_display import ProgressDisplay, create_progress_display
 
 
 # Color codes for terminal output
@@ -271,13 +273,14 @@ def get_question_interactive():
     return question
 
 
-def refine_question(question: str, config: AcademicConfig) -> Optional[str]:
+def refine_question(question: str, config: AcademicConfig, progress_display: Optional[ProgressDisplay] = None) -> Optional[str]:
     """
     Refine research question using QuestionRefiner with enhanced progress display.
     
     Args:
         question: Original research question
         config: Academic configuration
+        progress_display: Optional progress display for tracking
     
     Returns:
         Refined question or None if refinement fails
@@ -285,16 +288,26 @@ def refine_question(question: str, config: AcademicConfig) -> Optional[str]:
     try:
         from .question_refiner import QuestionRefiner
         
-        print(f"\n{Colors.OKCYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{Colors.ENDC}")
-        print(f"{Colors.BOLD}🔍 STAGE 1: Question Refinement{Colors.ENDC}")
-        print(f"{Colors.OKCYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{Colors.ENDC}\n")
-        
-        print(f"Analyzing research question for academic rigor...")
+        if progress_display:
+            progress_display.show_stage_start(
+                ResearchStage.QUESTION_REFINEMENT,
+                "Analyzing research question for academic rigor..."
+            )
+        else:
+            print(f"\n{Colors.OKCYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{Colors.ENDC}")
+            print(f"{Colors.BOLD}🔍 STAGE 1: Question Refinement{Colors.ENDC}")
+            print(f"{Colors.OKCYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{Colors.ENDC}\n")
+            print(f"Analyzing research question for academic rigor...")
         
         openrouter_key = get_env("OPENROUTER_API_KEY")
         if not openrouter_key:
             print(f"{Colors.WARNING}⚠️  Cannot refine question: API key not set{Colors.ENDC}")
+            if progress_display:
+                progress_display.tracker.fail_stage(ResearchStage.QUESTION_REFINEMENT, "API key not set")
             return None
+        
+        if progress_display:
+            progress_display.tracker.update_stage(ResearchStage.QUESTION_REFINEMENT, 30, "Calling refinement model...")
         
         refiner = QuestionRefiner(api_key=openrouter_key)
         refined = refiner.refine_question(
@@ -303,6 +316,10 @@ def refine_question(question: str, config: AcademicConfig) -> Optional[str]:
         )
         
         if refined and refined.refined_questions:
+            if progress_display:
+                progress_display.tracker.update_stage(ResearchStage.QUESTION_REFINEMENT, 90, "Processing results...")
+            
+            # Display results
             print(f"\n{Colors.OKGREEN}✅ Question Refinement Complete!{Colors.ENDC}\n")
             
             # Display original question
@@ -325,13 +342,24 @@ def refine_question(question: str, config: AcademicConfig) -> Optional[str]:
             
             print(f"\n{Colors.OKCYAN}Using refined question for research...{Colors.ENDC}\n")
             
+            # Complete stage
+            if progress_display:
+                progress_display.show_stage_complete(
+                    ResearchStage.QUESTION_REFINEMENT,
+                    f"Generated {len(refined.refined_questions)} refined questions"
+                )
+            
             # Use the first refined question
             return refined.refined_questions[0]
         
     except ImportError:
         print(f"{Colors.WARNING}⚠️  QuestionRefiner not available{Colors.ENDC}")
+        if progress_display:
+            progress_display.tracker.fail_stage(ResearchStage.QUESTION_REFINEMENT, "QuestionRefiner not available")
     except Exception as e:
         print(f"{Colors.WARNING}⚠️  Question refinement failed: {e}{Colors.ENDC}")
+        if progress_display:
+            progress_display.tracker.fail_stage(ResearchStage.QUESTION_REFINEMENT, str(e))
     
     return None
 
@@ -367,7 +395,7 @@ def create_question_file(question: str, project_root: Path) -> tuple[str, str]:
     return str(filepath), filename
 
 
-def run_research(dataset_filename: str, project_root: Path, academic_mode: bool = False, academic_config: Optional[AcademicConfig] = None, workflow_template: Optional[WorkflowTemplate] = None) -> bool:
+def run_research(dataset_filename: str, project_root: Path, academic_mode: bool = False, academic_config: Optional[AcademicConfig] = None, workflow_template: Optional[WorkflowTemplate] = None, progress_display: Optional[ProgressDisplay] = None) -> bool:
     """
     Run the DeepResearch agent with progress indicators.
     
@@ -377,6 +405,7 @@ def run_research(dataset_filename: str, project_root: Path, academic_mode: bool 
         academic_mode: Whether academic mode is enabled
         academic_config: Academic configuration (if academic mode enabled)
         workflow_template: Optional workflow template for specialized prompts
+        progress_display: Optional progress display for tracking
     
     Returns:
         True if research completed successfully
@@ -428,12 +457,18 @@ def run_research(dataset_filename: str, project_root: Path, academic_mode: bool 
     ]
     
     # Display research stage header
-    stage_num = "2" if academic_mode else "1"
-    print(f"\n{Colors.OKCYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{Colors.ENDC}")
-    print(f"{Colors.BOLD}🔬 STAGE {stage_num}: Deep Research{Colors.ENDC}")
-    print(f"{Colors.OKCYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{Colors.ENDC}\n")
+    if progress_display:
+        message = "Launching Tongyi DeepResearch 30B agent..."
+        if academic_mode:
+            message = "Prioritizing peer-reviewed sources with Scholar-first strategy"
+        progress_display.show_stage_start(ResearchStage.RESEARCH, message)
+    else:
+        stage_num = "2" if academic_mode else "1"
+        print(f"\n{Colors.OKCYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{Colors.ENDC}")
+        print(f"{Colors.BOLD}🔬 STAGE {stage_num}: Deep Research{Colors.ENDC}")
+        print(f"{Colors.OKCYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{Colors.ENDC}\n")
     
-    if academic_mode:
+    if academic_mode and not progress_display:
         print(f"{Colors.OKGREEN}Academic Mode:{Colors.ENDC} Prioritizing peer-reviewed sources")
         print(f"{Colors.OKGREEN}Research Agent:{Colors.ENDC} Tongyi DeepResearch 30B")
         
@@ -443,14 +478,23 @@ def run_research(dataset_filename: str, project_root: Path, academic_mode: bool 
         else:
             print(f"{Colors.OKGREEN}Search Strategy:{Colors.ENDC} Scholar-first with quality filtering")
         print()
-    else:
+    elif not progress_display:
         print(f"Launching Tongyi DeepResearch agent...\n")
     
     try:
+        if progress_display:
+            progress_display.tracker.update_stage(ResearchStage.RESEARCH, 10, "Starting research agent...")
+        
         subprocess.run(cmd, check=True, capture_output=False, text=True)
+        
+        if progress_display:
+            progress_display.show_stage_complete(ResearchStage.RESEARCH, "Research agent completed successfully")
+        
         return True
     except subprocess.CalledProcessError as e:
         print(f"\n{Colors.FAIL}❌ Research process failed: {e}{Colors.ENDC}")
+        if progress_display:
+            progress_display.tracker.fail_stage(ResearchStage.RESEARCH, str(e))
         return False
 
 
@@ -594,7 +638,8 @@ def generate_academic_report(
     research_results: str,
     config: AcademicConfig,
     output_dir: Path,
-    citation_manager: Optional[Any] = None
+    citation_manager: Optional[Any] = None,
+    progress_display: Optional[ProgressDisplay] = None
 ) -> Optional[Path]:
     """
     Generate academic report with proper formatting and citations.
@@ -605,6 +650,7 @@ def generate_academic_report(
         config: Academic configuration
         output_dir: Output directory
         citation_manager: Optional existing citation manager
+        progress_display: Optional progress display for tracking
     
     Returns:
         Path to generated report or None
@@ -614,14 +660,20 @@ def generate_academic_report(
         from .citation_manager import CitationManager
         
         # Display stage header
-        print(f"\n{Colors.OKCYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{Colors.ENDC}")
-        print(f"{Colors.BOLD}📝 STAGE 3: Academic Report Generation{Colors.ENDC}")
-        print(f"{Colors.OKCYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{Colors.ENDC}\n")
-        
-        print(f"Synthesizing research into academic format...")
-        print(f"  • Format: {Colors.OKGREEN}{config.output_format.value.capitalize()}{Colors.ENDC}")
-        print(f"  • Citation Style: {Colors.OKGREEN}{config.citation_style.value.upper()}{Colors.ENDC}")
-        print(f"  • Target Length: {Colors.OKGREEN}{config.word_count_target:,} words{Colors.ENDC}\n")
+        if progress_display:
+            progress_display.show_stage_start(
+                ResearchStage.REPORT_GENERATION,
+                f"Synthesizing research into {config.output_format.value} format with {config.citation_style.value.upper()} citations"
+            )
+        else:
+            print(f"\n{Colors.OKCYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{Colors.ENDC}")
+            print(f"{Colors.BOLD}📝 STAGE 3: Academic Report Generation{Colors.ENDC}")
+            print(f"{Colors.OKCYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{Colors.ENDC}\n")
+            
+            print(f"Synthesizing research into academic format...")
+            print(f"  • Format: {Colors.OKGREEN}{config.output_format.value.capitalize()}{Colors.ENDC}")
+            print(f"  • Citation Style: {Colors.OKGREEN}{config.citation_style.value.upper()}{Colors.ENDC}")
+            print(f"  • Target Length: {Colors.OKGREEN}{config.word_count_target:,} words{Colors.ENDC}\n")
         
         openrouter_key = get_env("OPENROUTER_API_KEY")
         if not openrouter_key:
@@ -632,6 +684,9 @@ def generate_academic_report(
         if citation_manager is None:
             citation_manager = CitationManager()
         
+        if progress_display:
+            progress_display.tracker.update_stage(ResearchStage.REPORT_GENERATION, 20, "Initializing report generator...")
+        
         # Initialize report generator
         generator = AcademicReportGenerator(
             config=config,
@@ -639,12 +694,19 @@ def generate_academic_report(
         )
         
         # Generate report
-        print(f"Generating structured sections...")
+        if progress_display:
+            progress_display.tracker.update_stage(ResearchStage.REPORT_GENERATION, 40, "Generating structured sections...")
+        else:
+            print(f"Generating structured sections...")
+        
         report = generator.generate_report(
             question=question,
             research_results=research_results,
             api_key=openrouter_key
         )
+        
+        if progress_display:
+            progress_display.tracker.update_stage(ResearchStage.REPORT_GENERATION, 80, "Formatting report...")
         
         # Save report
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -654,6 +716,13 @@ def generate_academic_report(
         report_path.parent.mkdir(parents=True, exist_ok=True)
         
         report.save(str(report_path), format='markdown')
+        
+        # Complete report generation stage
+        if progress_display:
+            progress_display.show_stage_complete(
+                ResearchStage.REPORT_GENERATION,
+                f"Generated {report.word_count:,} word {config.output_format.value}"
+            )
         
         # Display success with detailed metrics
         print(f"\n{Colors.OKGREEN}✅ Academic Report Complete!{Colors.ENDC}\n")
@@ -683,9 +752,18 @@ def generate_academic_report(
         
         # Export bibliography if requested
         if config.export_bibliography:
+            if progress_display:
+                progress_display.show_stage_start(ResearchStage.BIBLIOGRAPHY_GENERATION, "Exporting bibliography...")
+            
             bib_path = report_path.with_suffix('.bib')
             citation_manager.export_bibtex(str(bib_path))
             print(f"{Colors.OKGREEN}✓{Colors.ENDC} Bibliography exported: {bib_path}\n")
+            
+            if progress_display:
+                progress_display.show_stage_complete(
+                    ResearchStage.BIBLIOGRAPHY_GENERATION,
+                    f"Exported {len(citation_manager.citations)} citations"
+                )
         
         return report_path
         
@@ -823,6 +901,10 @@ Examples:
     # Check environment
     check_environment()
     
+    # Initialize progress tracking
+    progress_tracker = None
+    progress_display = None
+    
     # Workflow directory for custom workflows
     workflow_dir = project_root / ".gazzali" / "workflows"
     
@@ -869,6 +951,14 @@ Examples:
         
         display_academic_config(academic_config, workflow_name)
         
+        # Initialize progress tracking for academic mode
+        progress_tracker = ProgressTracker(academic_mode=True, chunked_mode=args.chunked)
+        progress_display = create_progress_display(progress_tracker, verbose=True)
+        
+        # Start initialization stage
+        progress_display.show_stage_start(ResearchStage.INITIALIZATION, "Setting up academic research workflow...")
+        progress_display.tracker.complete_stage(ResearchStage.INITIALIZATION, "Configuration loaded")
+        
         # Save workflow if requested
         if args.save_workflow:
             save_custom_workflow(args.save_workflow, academic_config, workflow_dir)
@@ -882,7 +972,10 @@ Examples:
     
     # Refine question if requested
     if args.refine and academic_config:
-        refined = refine_question(question, academic_config)
+        if progress_display:
+            progress_display.tracker.start_stage(ResearchStage.QUESTION_REFINEMENT, "Analyzing research question...")
+        
+        refined = refine_question(question, academic_config, progress_display)
         if refined:
             question = refined
             print(f"{Colors.BOLD}❓ Using refined question:{Colors.ENDC} {question}\n")
@@ -929,10 +1022,13 @@ Examples:
             print(final_report[:1000] + "...\n")
         else:
             print(f"{Colors.WARNING}⚠️  Chunked mode failed, falling back to standard pipeline{Colors.ENDC}\n")
-            success = run_research(question_filename, project_root, academic_mode=args.academic, academic_config=academic_config, workflow_template=workflow_template)
+            success = run_research(question_filename, project_root, academic_mode=args.academic, academic_config=academic_config, workflow_template=workflow_template, progress_display=progress_display)
     else:
         # Normal mode
-        success = run_research(question_filename, project_root, academic_mode=args.academic, academic_config=academic_config, workflow_template=workflow_template)
+        if progress_display:
+            progress_display.tracker.start_stage(ResearchStage.RESEARCH, "Starting deep research...")
+        
+        success = run_research(question_filename, project_root, academic_mode=args.academic, academic_config=academic_config, workflow_template=workflow_template, progress_display=progress_display)
     
     if not args.chunked and success:
         # Find and display result
@@ -951,15 +1047,24 @@ Examples:
             
             # Generate academic report if in academic mode
             if args.academic and academic_config:
+                if progress_display:
+                    progress_display.tracker.start_stage(ResearchStage.REPORT_GENERATION, "Generating academic report...")
+                
                 academic_report_path = generate_academic_report(
                     question=original_question,
                     research_results=research_results,
                     config=academic_config,
-                    output_dir=output_dir
+                    output_dir=output_dir,
+                    progress_display=progress_display
                 )
                 
                 # Display final academic success message
                 if academic_report_path:
+                    # Mark workflow as complete
+                    if progress_display:
+                        progress_display.tracker.complete_stage(ResearchStage.COMPLETE, "All stages completed")
+                        progress_display.show_summary()
+                    
                     print(f"\n{Colors.OKCYAN}╔════════════════════════════════════════════════════════════════╗{Colors.ENDC}")
                     print(f"{Colors.OKCYAN}║{Colors.ENDC} {Colors.OKGREEN}✅ ACADEMIC RESEARCH COMPLETE{Colors.ENDC}                              {Colors.OKCYAN}║{Colors.ENDC}")
                     print(f"{Colors.OKCYAN}╚════════════════════════════════════════════════════════════════╝{Colors.ENDC}\n")
@@ -969,6 +1074,12 @@ Examples:
                     print(f"  • Proper {academic_config.citation_style.value.upper()} citations")
                     print(f"  • Academic writing standards applied")
                     print(f"  • {academic_config.output_format.value.capitalize()} format structure\n")
+                    
+                    # Save progress report
+                    if progress_display:
+                        progress_report_path = output_dir / "reports" / f"progress_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+                        progress_display.tracker.save_progress_report(str(progress_report_path))
+                        print(f"{Colors.DIM}Progress report saved: {progress_report_path}{Colors.ENDC}\n")
             else:
                 # Standard mode - basic report already saved
                 print(f"\n{Colors.OKCYAN}╔════════════════════════════════════════════════════════════════╗{Colors.ENDC}")
