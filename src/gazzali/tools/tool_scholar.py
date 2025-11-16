@@ -34,12 +34,15 @@ import http.client
 try:
     from gazzali.config import get_env
     from gazzali.citation_manager import CitationManager, Citation, VenueType
+    from gazzali.source_credibility import SourceCredibilityEvaluator, CredibilityScore
 except Exception:  # pragma: no cover
     def get_env(name: str, default=None):
         return os.getenv(name, default)
     CitationManager = None
     Citation = None
     VenueType = None
+    SourceCredibilityEvaluator = None
+    CredibilityScore = None
 
 
 SERPER_KEY = get_env("SERPER_API_KEY") or os.environ.get("SERPER_KEY_ID")
@@ -99,6 +102,12 @@ class Scholar(BaseTool):
         """
         super().__init__(cfg)
         self.citation_manager = CitationManager() if CitationManager else None
+        
+        # Initialize source credibility evaluator
+        quality_threshold = float(os.getenv("SOURCE_QUALITY_THRESHOLD", "7.0"))
+        self.credibility_evaluator = SourceCredibilityEvaluator(
+            min_quality_threshold=quality_threshold
+        ) if SourceCredibilityEvaluator else None
         
         # Academic search operators for query optimization
         self.academic_operators = {
@@ -311,6 +320,24 @@ class Scholar(BaseTool):
             'is_highly_cited': self._is_highly_cited(page.get('citedBy', 0)),
             'related_url': page.get('relatedUrl', None),
         }
+        
+        # Evaluate source credibility
+        if self.credibility_evaluator:
+            credibility = self.credibility_evaluator.evaluate_source(
+                title=metadata['title'],
+                venue=metadata['venue'],
+                url=metadata['url'],
+                venue_type=metadata['venue_type'],
+                citation_count=metadata['citation_count'],
+                year=metadata['year'],
+                is_open_access=metadata['is_open_access'],
+                abstract=metadata['abstract'],
+            )
+            metadata['credibility_score'] = credibility.score
+            metadata['credibility_assessment'] = credibility.to_dict()
+        else:
+            metadata['credibility_score'] = None
+            metadata['credibility_assessment'] = None
         
         return metadata
     
@@ -618,6 +645,30 @@ class Scholar(BaseTool):
                 cited_str += " [HIGHLY CITED]"
             lines.append(f"   {cited_str}")
         
+        # Credibility assessment
+        if metadata.get('credibility_score') is not None:
+            cred_score = metadata['credibility_score']
+            cred_assessment = metadata.get('credibility_assessment', {})
+            
+            # Format credibility line
+            quality = cred_assessment.get('overall_quality', 'unknown')
+            is_peer_reviewed = cred_assessment.get('is_peer_reviewed', False)
+            
+            cred_str = f"Quality: {cred_score:.1f}/10 ({quality})"
+            if is_peer_reviewed:
+                cred_str += " [PEER-REVIEWED]"
+            lines.append(f"   {cred_str}")
+            
+            # Add warnings if any
+            warnings = cred_assessment.get('warnings', [])
+            if warnings:
+                lines.append(f"   ⚠️  {warnings[0]}")  # Show first warning
+            
+            # Add strengths if any
+            strengths = cred_assessment.get('strengths', [])
+            if strengths:
+                lines.append(f"   ✓ {strengths[0]}")  # Show first strength
+        
         # Paper type and methodology
         meta_info = []
         if metadata['paper_type'] != 'unknown':
@@ -668,6 +719,11 @@ class Scholar(BaseTool):
             ptype = r['paper_type']
             paper_types[ptype] = paper_types.get(ptype, 0) + 1
         
+        # Quality statistics
+        quality_stats = None
+        if self.credibility_evaluator:
+            quality_stats = self.credibility_evaluator.get_statistics()
+        
         lines.append("## Summary")
         lines.append(f"- Total results: {len(structured_results)}")
         lines.append(f"- Highly cited papers (100+ citations): {highly_cited}")
@@ -679,12 +735,26 @@ class Scholar(BaseTool):
             if type_str:
                 lines.append(f"- Paper types: {type_str}")
         
+        # Add quality statistics
+        if quality_stats and quality_stats['total_sources'] > 0:
+            lines.append("")
+            lines.append("### Source Quality")
+            lines.append(f"- Peer-reviewed sources: {quality_stats['peer_reviewed_count']} ({quality_stats['peer_reviewed_percentage']:.1f}%)")
+            lines.append(f"- Average quality score: {quality_stats['average_score']:.2f}/10")
+            lines.append(f"- High-quality sources (≥{quality_stats['quality_threshold']}): {quality_stats['high_quality_count']}")
+            if quality_stats['low_quality_count'] > 0:
+                lines.append(f"- ⚠️  Low-quality sources (<4.0): {quality_stats['low_quality_count']}")
+        
         lines.append("")
         lines.append("## Scholar Results")
         lines.append("")
         
         # Results
         lines.extend(web_snippets)
+        
+        # Log quality summary if evaluator available
+        if self.credibility_evaluator and quality_stats and quality_stats['total_sources'] > 0:
+            self.credibility_evaluator.log_quality_summary()
         
         return '\n'.join(lines)
     
@@ -758,3 +828,12 @@ class Scholar(BaseTool):
             CitationManager instance or None
         """
         return self.citation_manager
+    
+    def get_credibility_evaluator(self) -> Optional[SourceCredibilityEvaluator]:
+        """
+        Get the source credibility evaluator instance.
+        
+        Returns:
+            SourceCredibilityEvaluator instance or None
+        """
+        return self.credibility_evaluator
