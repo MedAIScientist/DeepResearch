@@ -1,6 +1,6 @@
-# Eye of Prometheus
+# Gazzali Research
 
-Eye of Prometheus is a command-line research companion that orchestrates Alibaba Cloud's **Tongyi DeepResearch 30B** agent for web-scale investigations and **xAI's grok-4-fast** model for long-form synthesis. The project wraps the DeepResearch inference stack with modern tooling, chunked query planning, and Markdown-first reporting so that complex research questions can be answered end-to-end from your terminal.
+**Gazzali Research** is an academic-focused AI research assistant named after Al-Ghazali (1058-1111), the renowned Islamic philosopher, theologian, and scholar. This command-line tool orchestrates Alibaba Cloud's **Tongyi DeepResearch 30B** agent for scholarly investigations and **xAI's grok-4-fast** model for academic report synthesis. The system provides specialized features for academic research including citation management, literature review synthesis, methodology analysis, and peer-review quality outputs.
 
 <div align="center">
 <img src="https://github.com/alicankiraz1/Eye-of-Prometheus/blob/main/PoC.gif" width="800">
@@ -8,33 +8,36 @@ Eye of Prometheus is a command-line research companion that orchestrates Alibaba
 
 ## Key Capabilities
 
-- **Single-command deep research** — Run Tongyi DeepResearch through OpenRouter with automatic environment loading and safe defaults.
-- **Chunked investigation pipeline** — Break very large prompts into focused sub-questions, run them in parallel, then synthesize consolidated findings.
-- **Comprehensive English reporting** — Use grok-4-fast (2M-token context via OpenRouter) to generate multi-section executive reports with citations, tables, and forward-looking analysis.
-- **Offline synthesis utility** — Re-run synthesis on existing chunk outputs without repeating the costly research phase.
-- **Strict environment isolation** — `.env.example`, `.gitignore`, and `install.sh` keep API keys out of version control and guide new users through setup.
+- **Academic-focused research** — Prioritize peer-reviewed sources, scholarly databases, and academic publications for credible research.
+- **Citation management** — Automatic citation tracking and formatting in APA, MLA, Chicago, and IEEE styles with bibliography generation.
+- **Literature review synthesis** — Systematic analysis of existing research with gap identification and thematic organization.
+- **Methodology analysis** — Extract and document research methodologies, study designs, and analytical techniques from papers.
+- **Chunked investigation pipeline** — Break complex research questions into focused sub-questions for comprehensive coverage.
+- **Academic report generation** — Generate structured reports following academic conventions with proper sections and formal writing style.
+- **Research question refinement** — Transform broad topics into specific, answerable research questions using FINER criteria.
+- **Offline synthesis utility** — Re-run synthesis on existing research outputs without repeating the costly research phase.
 
 ## Project Layout
 
 ```text
-Eye-of-Prometheus/
+Gazzali-Research/
 ├── install.sh                 # Bootstrap script (venv, requirements, .env provisioning)
-├── requirements.txt           # Python dependencies (mirrors the tested macOS stack)
+├── requirements.txt           # Python dependencies
 ├── .env.example               # Template for API credentials
 ├── scripts/
 │   └── ask.sh                 # CLI wrapper that activates the virtualenv and runs the tool
 ├── src/
-│   └── eye_of_prometheus/
+│   └── gazzali/
 │       ├── __init__.py        # Package init + env loader
-│       ├── config.py          # dotenv-enabled environment helpers
+│       ├── config.py          # Configuration and environment helpers
 │       ├── ask.py             # Interactive CLI entrypoint
-│       ├── chunked_research.py# Chunked research orchestration utilities
-│       ├── report_generator.py# grok-4-fast report synthesis logic
+│       ├── chunked_research.py# Chunked research orchestration
+│       ├── report_generator.py# Academic report synthesis logic
 │       ├── synthesize_only.py # Offline synthesis command
-│       └── DeepResearch/      # Alibaba Tongyi DeepResearch agent (vendor code, lightly patched)
+│       └── DeepResearch/      # Alibaba Tongyi DeepResearch agent
 └── docs/
-    ├── CHUNKED_WORKFLOW.md    # Detailed description of the chunked research flow
-    └── REPORTING_PIPELINE.md  # Breakdown of the two-stage reporting architecture
+    ├── CHUNKED_WORKFLOW.md    # Chunked research flow documentation
+    └── REPORTING_PIPELINE.md  # Two-stage reporting architecture
 ```
 
 ## External Services & References
@@ -80,7 +83,7 @@ At any time you can re-run the script to reinstall dependencies (existing `.env`
 ```bash
 source .venv/bin/activate
 export PYTHONPATH="$(pwd)/src:$PYTHONPATH"
-python -m eye_of_prometheus.ask "What are the most significant AI safety milestones announced in 2024?"
+python -m gazzali.ask "What are the most significant AI safety milestones announced in 2024?"
 ```
 
 Or, with the convenience wrapper:
@@ -120,14 +123,14 @@ This mode:
 If you already collected chunk outputs but want a new synthesis pass (e.g., with updated prompts), run:
 
 ```bash
-python -m eye_of_prometheus.synthesize_only "Original research question here"
+python -m gazzali.synthesize_only "Original research question here"
 ```
 
 The utility locates the most recent chunk run, reloads its JSONL outputs, and regenerates an English synthesis report without re-hitting the search APIs.
 
 ## Configuration & Environment Variables
 
-`src/eye_of_prometheus/config.py` automatically loads `.env` from the project root. The following keys are recognised:
+`src/gazzali/config.py` automatically loads `.env` from the project root. The following keys are recognised:
 
 | Variable | Description |
 |----------|-------------|
@@ -145,7 +148,7 @@ The utility locates the most recent chunk run, reloads its JSONL outputs, and re
 | `REPORT_CONTEXT_LIMIT` | Approximate total context window to target (default: 2000000 tokens). |
 | `REPORT_MAX_TOKENS` | Cap on output tokens for synthesis (default: 800000). |
 
-All Python modules access configuration via `eye_of_prometheus.get_env`, ensuring `.env` values are respected without manual wiring.
+All Python modules access configuration via `gazzali.get_env`, ensuring `.env` values are respected without manual wiring.
 
 ## Docs & Deep Dives
 
@@ -161,7 +164,7 @@ All Python modules access configuration via `eye_of_prometheus.get_env`, ensurin
 
 ## Credits
 
-- **Alibaba-NLP** for [Tongyi DeepResearch](https://github.com/Alibaba-NLP/DeepResearch) (bundled under `src/eye_of_prometheus/DeepResearch`).
+- **Alibaba-NLP** for [Tongyi DeepResearch](https://github.com/Alibaba-NLP/DeepResearch) (bundled under `src/gazzali/DeepResearch`).
 - **xAI** for [grok-4-fast](https://x.ai/).
 - **OpenRouter**, **Serper.dev**, and **Jina AI** for their APIs.
 

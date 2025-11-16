@@ -106,7 +106,7 @@ Eye of Prometheus setup complete!
 Next steps:
 1. source .venv/bin/activate
 2. Run the CLI from project root, e.g.
-   python -m eye_of_prometheus.ask "What are the latest AI safety milestones?"
+   python -m gazzali.ask "What are the latest AI safety milestones?"
 
 Refer to README.md for detailed usage instructions.
 ==============================================================

@@ -1,6 +1,6 @@
 # Chunked Research Workflow
 
-The chunked pipeline handles questions that are too broad for a single research run by decomposing them into smaller, tractable prompts. The flow is implemented in `src/eye_of_prometheus/chunked_research.py` and is exposed through the CLI (`python -m eye_of_prometheus.ask --chunked ...`).
+The chunked pipeline handles questions that are too broad for a single research run by decomposing them into smaller, tractable prompts. The flow is implemented in `src/gazzali/chunked_research.py` and is exposed through the CLI (`python -m gazzali.ask --chunked ...`).
 
 ## High-level Stages
 

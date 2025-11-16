@@ -286,13 +286,13 @@ def main():
         epilog="""
 Examples:
   # Interactive mode
-  python -m eye_of_prometheus.ask
+  python -m gazzali.ask
 
   # Ask a single question directly
-  python -m eye_of_prometheus.ask "What are the major AI safety milestones in 2024?"
+  python -m gazzali.ask "What are the major AI safety milestones in 2024?"
 
   # Run chunked research for large questions
-  python -m eye_of_prometheus.ask --chunked "Map the global AI regulation landscape"
+  python -m gazzali.ask --chunked "Map the global AI regulation landscape"
         """
     )
 

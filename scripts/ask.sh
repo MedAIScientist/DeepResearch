@@ -21,8 +21,8 @@ if [ -f "$ENV_FILE" ]; then
   set +a
 fi
 
-# Ensure src/ is on PYTHONPATH so `python -m eye_of_prometheus.ask` resolves
+# Ensure src/ is on PYTHONPATH so `python -m gazzali.ask` resolves
 export PYTHONPATH="$PROJECT_ROOT/src:${PYTHONPATH:-}"
 
-python -m eye_of_prometheus.ask "$@"
+python -m gazzali.ask "$@"
 

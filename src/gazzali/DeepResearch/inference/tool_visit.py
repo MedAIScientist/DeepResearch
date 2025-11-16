@@ -15,7 +15,7 @@ from transformers import AutoTokenizer
 import tiktoken
 
 try:
-    from eye_of_prometheus.config import get_env
+    from gazzali.config import get_env
 except Exception:  # pragma: no cover
     def get_env(name: str, default=None):
         return os.getenv(name, default)

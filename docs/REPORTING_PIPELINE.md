@@ -4,7 +4,7 @@ Eye of Prometheus separates *research* from *report generation* to balance accur
 
 ## Stage 1 — Research Brief (Tongyi DeepResearch)
 
-- Implemented in `eye_of_prometheus.ask.run_research`.
+- Implemented in `gazzali.ask.run_research`.
 - Relies on Alibaba Tongyi DeepResearch 30B via OpenRouter.
 - Produces an evidence-rich Markdown snapshot with:
   - The original question

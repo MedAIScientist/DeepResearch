@@ -12,7 +12,7 @@ import json
 import os
 
 try:
-    from eye_of_prometheus.config import get_env
+    from gazzali.config import get_env
 except Exception:  # pragma: no cover - fallback if package import fails
     def get_env(name: str, default=None):
         return os.getenv(name, default)
