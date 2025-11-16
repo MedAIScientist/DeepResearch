@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Eye of Prometheus interactive CLI."""
+"""Gazzali Research interactive CLI."""
 
 import sys
 import os
@@ -30,7 +30,7 @@ def print_banner():
     """Print application banner"""
     banner = f"""
 {Colors.OKCYAN}╔════════════════════════════════════════════════════════════════╗
-║     Eye of Prometheus - Research CLI                           ║
+║     Gazzali Research - Research CLI                           ║
 ║     Run fully automated deep research from the terminal       ║
 ╚════════════════════════════════════════════════════════════════╝{Colors.ENDC}
 """
@@ -203,7 +203,7 @@ def save_markdown_report(data, output_dir):
     try:
         with open(report_file, 'w', encoding='utf-8') as f:
             # Header
-            f.write("# Eye of Prometheus Research Report\n\n")
+            f.write("# Gazzali Research Research Report\n\n")
             f.write(f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
             f.write("---\n\n")
 
@@ -281,7 +281,7 @@ def display_result(output_file):
 def main():
     """Main function"""
     parser = argparse.ArgumentParser(
-        description="Eye of Prometheus - Deep Research CLI",
+        description="Gazzali Research - Deep Research CLI",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:

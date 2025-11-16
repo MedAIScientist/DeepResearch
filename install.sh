@@ -101,7 +101,7 @@ fi
 cat <<'EOM'
 
 ==============================================================
-Eye of Prometheus setup complete!
+Gazzali Research setup complete!
 
 Next steps:
 1. source .venv/bin/activate

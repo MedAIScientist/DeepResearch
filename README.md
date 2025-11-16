@@ -1,5 +1,7 @@
 # Gazzali Research
 
+**Repository:** [https://github.com/MedAIScientist/DeepResearch](https://github.com/MedAIScientist/DeepResearch)
+
 **Gazzali Research** is an academic-focused AI research assistant named after Al-Ghazali (1058-1111), the renowned Islamic philosopher, theologian, and scholar. This command-line tool orchestrates Alibaba Cloud's **Tongyi DeepResearch 30B** agent for scholarly investigations and **xAI's grok-4-fast** model for academic report synthesis. The system provides specialized features for academic research including citation management, literature review synthesis, methodology analysis, and peer-review quality outputs.
 
 <div align="center">
@@ -62,8 +64,8 @@ Gazzali-Research/
 ## Installation
 
 ```bash
-git clone https://github.com/alicankiraz1/Eye-of-Prometheus.git
-cd Eye-of-Prometheus
+git clone https://github.com/MedAIScientist/DeepResearch.git
+cd DeepResearch
 ./install.sh
 ```
 

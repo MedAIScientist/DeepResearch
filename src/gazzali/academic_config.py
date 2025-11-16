@@ -15,6 +15,9 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional, List, Dict, Any
 
+# Import config helpers for consistent environment variable parsing
+from . import config
+
 
 class CitationStyle(str, Enum):
     """Supported academic citation styles"""
@@ -76,6 +79,8 @@ class AcademicConfig:
         """
         Load configuration from environment variables.
         
+        Uses helper functions from config module for consistent parsing.
+        
         Environment variables:
             CITATION_STYLE: Citation format (apa, mla, chicago, ieee)
             OUTPUT_FORMAT: Output format (paper, review, proposal, abstract, presentation)
@@ -91,22 +96,6 @@ class AcademicConfig:
         Returns:
             AcademicConfig instance with values from environment or defaults
         """
-        def get_bool(key: str, default: bool) -> bool:
-            """Parse boolean from environment variable"""
-            value = os.getenv(key, "").lower()
-            if value in ("true", "1", "yes"):
-                return True
-            elif value in ("false", "0", "no"):
-                return False
-            return default
-        
-        def get_int(key: str, default: int) -> int:
-            """Parse integer from environment variable"""
-            try:
-                return int(os.getenv(key, str(default)))
-            except ValueError:
-                return default
-        
         def get_enum(key: str, enum_class, default):
             """Parse enum from environment variable"""
             value = os.getenv(key, "").lower()
@@ -119,13 +108,13 @@ class AcademicConfig:
             citation_style=get_enum("CITATION_STYLE", CitationStyle, CitationStyle.APA),
             output_format=get_enum("OUTPUT_FORMAT", OutputFormat, OutputFormat.PAPER),
             discipline=get_enum("DISCIPLINE", Discipline, Discipline.GENERAL),
-            word_count_target=get_int("WORD_COUNT_TARGET", 8000),
-            include_abstract=get_bool("INCLUDE_ABSTRACT", True),
-            include_methodology=get_bool("INCLUDE_METHODOLOGY", True),
-            scholar_priority=get_bool("SCHOLAR_PRIORITY", True),
-            export_bibliography=get_bool("EXPORT_BIBLIOGRAPHY", False),
-            min_peer_reviewed=get_int("MIN_PEER_REVIEWED_SOURCES", 5),
-            source_quality_threshold=get_int("SOURCE_QUALITY_THRESHOLD", 7),
+            word_count_target=config.get_word_count_target(),
+            include_abstract=config.get_include_abstract(),
+            include_methodology=config.get_include_methodology(),
+            scholar_priority=config.get_scholar_priority(),
+            export_bibliography=config.get_export_bibliography(),
+            min_peer_reviewed=config.get_min_peer_reviewed_sources(),
+            source_quality_threshold=config.get_source_quality_threshold(),
         )
     
     @classmethod

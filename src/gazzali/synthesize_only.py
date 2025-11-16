@@ -161,7 +161,7 @@ def main():
     """Main function"""
     import argparse
     
-    parser = argparse.ArgumentParser(description='Eye of Prometheus - Synthesis Utility')
+    parser = argparse.ArgumentParser(description='Gazzali Research - Synthesis Utility')
     parser.add_argument('question', nargs='?', help='Original research question (optional; inferred from chunks if omitted)')
     parser.add_argument('--output-dir', help='Custom output directory (defaults to <project>/outputs)')
     

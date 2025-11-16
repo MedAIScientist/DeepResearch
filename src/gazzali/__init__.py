@@ -1,4 +1,4 @@
-"""Core package for Eye of Prometheus research workflow."""
+"""Core package for Gazzali Research research workflow."""
 
 from .config import get_env
 

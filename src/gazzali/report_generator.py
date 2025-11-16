@@ -184,7 +184,7 @@ Do not slip into other languages. The final deliverable must be entirely in Engl
         
         # Add metadata header
         metadata_header = f"""---
-title: Eye of Prometheus Comprehensive Report
+title: Gazzali Research Comprehensive Report
 date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 model: {model_name}
 question: {question}

@@ -1,6 +1,6 @@
 # Reporting Pipeline
 
-Eye of Prometheus separates *research* from *report generation* to balance accuracy and narrative quality.
+Gazzali Research separates *research* from *report generation* to balance accuracy and narrative quality.
 
 ## Stage 1 — Research Brief (Tongyi DeepResearch)
 
