@@ -233,7 +233,7 @@ def create_question_file(question: str, project_root: Path) -> tuple[str, str]:
     return str(filepath), filename
 
 
-def run_research(dataset_filename: str, project_root: Path, academic_mode: bool = False) -> bool:
+def run_research(dataset_filename: str, project_root: Path, academic_mode: bool = False, academic_config: Optional[AcademicConfig] = None) -> bool:
     """
     Run the DeepResearch agent with progress indicators.
     
@@ -241,6 +241,7 @@ def run_research(dataset_filename: str, project_root: Path, academic_mode: bool 
         dataset_filename: Name of the dataset file
         project_root: Project root directory
         academic_mode: Whether academic mode is enabled
+        academic_config: Academic configuration (if academic mode enabled)
     
     Returns:
         True if research completed successfully
@@ -263,6 +264,15 @@ def run_research(dataset_filename: str, project_root: Path, academic_mode: bool 
     
     # Use the relative path from inference directory
     dataset_path = f"eval_data/{dataset_filename}"
+    
+    # Set academic mode environment variables for the agent to read
+    if academic_mode and academic_config:
+        os.environ["GAZZALI_ACADEMIC_MODE"] = "true"
+        os.environ["GAZZALI_DISCIPLINE"] = academic_config.discipline.value
+        os.environ["GAZZALI_OUTPUT_FORMAT"] = academic_config.output_format.value
+        os.environ["GAZZALI_CITATION_STYLE"] = academic_config.citation_style.value
+    else:
+        os.environ["GAZZALI_ACADEMIC_MODE"] = "false"
     
     # Run run_multi_react.py
     cmd = [
@@ -707,10 +717,10 @@ Examples:
             print(final_report[:1000] + "...\n")
         else:
             print(f"{Colors.WARNING}⚠️  Chunked mode failed, falling back to standard pipeline{Colors.ENDC}\n")
-            success = run_research(question_filename, project_root, academic_mode=args.academic)
+            success = run_research(question_filename, project_root, academic_mode=args.academic, academic_config=academic_config)
     else:
         # Normal mode
-        success = run_research(question_filename, project_root, academic_mode=args.academic)
+        success = run_research(question_filename, project_root, academic_mode=args.academic, academic_config=academic_config)
     
     if not args.chunked and success:
         # Find and display result

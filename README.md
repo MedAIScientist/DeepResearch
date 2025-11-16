@@ -80,21 +80,53 @@ At any time you can re-run the script to reinstall dependencies (existing `.env`
 
 ## Quick Start
 
-### Ask a Question
+### Standard Research Mode
 
 ```bash
 source .venv/bin/activate
 export PYTHONPATH="$(pwd)/src:$PYTHONPATH"
-python -m gazzali.ask "What are the most significant AI safety milestones announced in 2024?"
+python -m gazzali.gazzali "What are the most significant AI safety milestones announced in 2024?"
 ```
 
 Or, with the convenience wrapper:
 
 ```bash
+./scripts/gazzali.sh "What are the most significant AI safety milestones announced in 2024?"
+```
+
+### Academic Research Mode
+
+For scholarly research with enhanced features:
+
+```bash
+# Academic paper with APA citations
+./scripts/gazzali.sh --academic --citation-style apa "Impact of AI on education"
+
+# Literature review in social sciences
+./scripts/gazzali.sh --academic --output-format review --discipline social \
+    "Social media effects on mental health"
+
+# Research proposal with question refinement
+./scripts/gazzali.sh --academic --output-format proposal --refine \
+    "Climate change adaptation strategies"
+```
+
+The academic mode provides:
+- **Citation management** — Automatic tracking and formatting in APA, MLA, Chicago, or IEEE
+- **Scholar priority** — Prioritizes Google Scholar over general web search
+- **Structured sections** — Abstract, Introduction, Literature Review, Methodology, etc.
+- **Discipline-specific conventions** — Tailored terminology and writing style for STEM, social sciences, humanities, or medical fields
+- **Bibliography export** — Generate .bib files for reference managers
+
+### Legacy CLI (ask.py)
+
+The original CLI is still available for backward compatibility:
+
+```bash
 ./scripts/ask.sh "What are the most significant AI safety milestones announced in 2024?"
 ```
 
-`./scripts/ask.sh` automatically sets `PYTHONPATH` to include `src/`, so you can invoke it without exporting the variable manually. When launching the module yourself, be sure `src/` is present on `PYTHONPATH` as shown above.
+`./scripts/ask.sh` and `./scripts/gazzali.sh` automatically set `PYTHONPATH` to include `src/`, so you can invoke them without exporting the variable manually. When launching the module yourself, be sure `src/` is present on `PYTHONPATH` as shown above.
 
 The CLI will:
 
@@ -130,6 +162,32 @@ python -m gazzali.synthesize_only "Original research question here"
 
 The utility locates the most recent chunk run, reloads its JSONL outputs, and regenerates an English synthesis report without re-hitting the search APIs.
 
+## CLI Reference
+
+### Main CLI (gazzali.py)
+
+The new `gazzali.py` CLI provides both standard and academic research modes:
+
+```bash
+python -m gazzali.gazzali [OPTIONS] [QUESTION]
+```
+
+**Academic Mode Options:**
+- `--academic` — Enable academic research mode
+- `--citation-style {apa,mla,chicago,ieee}` — Citation format (default: apa)
+- `--output-format {paper,review,proposal,abstract,presentation}` — Document format (default: paper)
+- `--discipline {general,stem,social,humanities,medical}` — Academic discipline (default: general)
+- `--refine` — Refine research question using FINER criteria
+- `--word-count COUNT` — Target word count (default: 8000)
+- `--export-bib` — Export bibliography to .bib file
+
+**General Options:**
+- `--chunked` — Enable chunked research mode
+- `--no-keep` — Do not keep temporary dataset files
+- `--output-dir PATH` — Custom output directory
+
+For detailed CLI documentation, see [docs/CLI_INTERFACE.md](docs/CLI_INTERFACE.md).
+
 ## Configuration & Environment Variables
 
 `src/gazzali/config.py` automatically loads `.env` from the project root. The following keys are recognised:
@@ -149,6 +207,15 @@ The utility locates the most recent chunk run, reloads its JSONL outputs, and re
 | `REPORT_MODEL` | Reporting model for synthesis (default: `x-ai/grok-4-fast`). |
 | `REPORT_CONTEXT_LIMIT` | Approximate total context window to target (default: 2000000 tokens). |
 | `REPORT_MAX_TOKENS` | Cap on output tokens for synthesis (default: 800000). |
+| **Academic Mode Settings** | |
+| `CITATION_STYLE` | Default citation style: apa, mla, chicago, ieee (default: apa). |
+| `OUTPUT_FORMAT` | Default output format: paper, review, proposal, abstract, presentation (default: paper). |
+| `DISCIPLINE` | Default discipline: general, stem, social, humanities, medical (default: general). |
+| `WORD_COUNT_TARGET` | Target word count for academic reports (default: 8000). |
+| `SCHOLAR_PRIORITY` | Prioritize Scholar tool over general search (default: true). |
+| `EXPORT_BIBLIOGRAPHY` | Export bibliography to .bib file (default: false). |
+| `MIN_PEER_REVIEWED_SOURCES` | Minimum peer-reviewed sources required (default: 5). |
+| `SOURCE_QUALITY_THRESHOLD` | Minimum source quality score 0-10 (default: 7). |
 
 All Python modules access configuration via `gazzali.get_env`, ensuring `.env` values are respected without manual wiring.
 

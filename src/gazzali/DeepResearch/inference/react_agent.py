@@ -23,6 +23,22 @@ from tool_python import *
 from tool_search import *
 from tool_visit import *
 
+# Import academic prompts for academic mode
+try:
+    import sys
+    from pathlib import Path
+    # Add parent directories to path to import from gazzali package
+    gazzali_root = Path(__file__).parent.parent.parent.parent
+    if str(gazzali_root) not in sys.path:
+        sys.path.insert(0, str(gazzali_root))
+    
+    from src.gazzali.prompts.academic_prompts import get_academic_research_prompt
+    from src.gazzali.academic_config import AcademicConfig
+    ACADEMIC_PROMPTS_AVAILABLE = True
+except ImportError:
+    ACADEMIC_PROMPTS_AVAILABLE = False
+    print("Warning: Academic prompts not available. Running in standard mode.")
+
 OBS_START = '<tool_response>'
 OBS_END = '\n</tool_response>'
 
@@ -196,9 +212,33 @@ class MultiTurnReactAgent(FnCallAgent):
         planning_port = data['planning_port']
         answer = data['item']['answer']
         self.user_prompt = question
-        system_prompt = SYSTEM_PROMPT
-        cur_date = today_date()
-        system_prompt = system_prompt + str(cur_date)
+        
+        # Academic mode detection and prompt selection
+        # Check environment variables set by gazzali.py
+        academic_mode = os.getenv("GAZZALI_ACADEMIC_MODE", "false").lower() == "true"
+        
+        if academic_mode and ACADEMIC_PROMPTS_AVAILABLE:
+            print("🎓 Academic Mode: Loading enhanced academic research prompts")
+            
+            # Get discipline and output format from environment
+            discipline = os.getenv("GAZZALI_DISCIPLINE", "general")
+            output_format = os.getenv("GAZZALI_OUTPUT_FORMAT", "paper")
+            
+            # Generate academic prompt with discipline-specific modifiers
+            system_prompt = get_academic_research_prompt(
+                discipline=discipline,
+                output_format=output_format
+            )
+            
+            print(f"   • Discipline: {discipline.upper()}")
+            print(f"   • Output Format: {output_format.capitalize()}")
+            print(f"   • Scholar-First Strategy: Enabled")
+        else:
+            # Use standard prompt
+            system_prompt = SYSTEM_PROMPT
+            cur_date = today_date()
+            system_prompt = system_prompt + str(cur_date)
+        
         messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": question}]
         num_llm_calls_available = min(MAX_LLM_CALL_PER_RUN, 30)  # Limit to 30 rounds max to prevent infinite loops
         round = 0
