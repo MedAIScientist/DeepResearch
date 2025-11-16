@@ -396,9 +396,221 @@ class MultiTurnReactAgent(FnCallAgent):
         }
         return result
 
+    def assess_source_quality(self, tool_name: str, result: str) -> Dict[str, Any]:
+        """
+        Assess the quality of sources returned by a tool.
+        
+        Scoring system (0-10):
+        - Peer-reviewed journal/conference: 10
+        - Academic institution/university: 8
+        - Government/research organization: 7
+        - Professional organization: 6
+        - News from reputable source: 5
+        - General web content: 3
+        - Unknown/unverified: 2
+        
+        Args:
+            tool_name: Name of the tool that generated the result
+            result: The result string from the tool
+        
+        Returns:
+            Dictionary with quality metrics:
+                - average_score: Average quality score
+                - peer_reviewed_count: Number of peer-reviewed sources
+                - total_sources: Total number of sources
+                - quality_level: 'high', 'medium', or 'low'
+        """
+        # Scholar tool results are always high quality (peer-reviewed)
+        if tool_name == "google_scholar":
+            # Count results (look for numbered items)
+            import re
+            result_count = len(re.findall(r'^\d+\.\s+\[', result, re.MULTILINE))
+            
+            return {
+                'average_score': 10,
+                'peer_reviewed_count': result_count,
+                'total_sources': result_count,
+                'quality_level': 'high',
+                'tool': 'google_scholar'
+            }
+        
+        # Visit tool - assess based on URL and content
+        elif tool_name == "visit_page":
+            score = 3  # Default for general web
+            is_peer_reviewed = False
+            
+            # Check for academic indicators in result
+            result_lower = result.lower()
+            
+            # Peer-reviewed indicators
+            if any(indicator in result_lower for indicator in [
+                'doi:', 'journal', 'conference', 'proceedings', 'ieee', 'acm',
+                'springer', 'elsevier', 'nature', 'science', 'arxiv'
+            ]):
+                score = 10
+                is_peer_reviewed = True
+            
+            # Academic institution indicators
+            elif any(indicator in result_lower for indicator in [
+                '.edu', 'university', 'college', 'research center', 'institute'
+            ]):
+                score = 8
+            
+            # Government/research organization
+            elif any(indicator in result_lower for indicator in [
+                '.gov', 'national', 'federal', 'nih', 'nsf', 'nasa'
+            ]):
+                score = 7
+            
+            # Professional organization
+            elif any(indicator in result_lower for indicator in [
+                'association', 'society', 'organization', '.org'
+            ]):
+                score = 6
+            
+            # News sources
+            elif any(indicator in result_lower for indicator in [
+                'news', 'times', 'post', 'journal', 'magazine'
+            ]):
+                score = 5
+            
+            return {
+                'average_score': score,
+                'peer_reviewed_count': 1 if is_peer_reviewed else 0,
+                'total_sources': 1,
+                'quality_level': 'high' if score >= 8 else 'medium' if score >= 5 else 'low',
+                'tool': 'visit_page'
+            }
+        
+        # Search tool - generally lower quality than Scholar
+        elif tool_name == "search":
+            # Estimate based on content
+            result_lower = result.lower()
+            
+            # Count academic indicators
+            academic_count = sum(1 for indicator in [
+                'doi:', 'journal', 'university', '.edu', 'research', 'study'
+            ] if indicator in result_lower)
+            
+            # Count results
+            import re
+            result_count = len(re.findall(r'^\d+\.\s+', result, re.MULTILINE))
+            if result_count == 0:
+                result_count = 1
+            
+            # Estimate peer-reviewed sources (conservative)
+            peer_reviewed_estimate = min(academic_count, result_count // 2)
+            
+            # Average score based on academic indicators
+            if academic_count >= 3:
+                avg_score = 7
+                quality = 'medium'
+            elif academic_count >= 1:
+                avg_score = 5
+                quality = 'medium'
+            else:
+                avg_score = 3
+                quality = 'low'
+            
+            return {
+                'average_score': avg_score,
+                'peer_reviewed_count': peer_reviewed_estimate,
+                'total_sources': result_count,
+                'quality_level': quality,
+                'tool': 'search'
+            }
+        
+        # Other tools - neutral quality
+        else:
+            return {
+                'average_score': 5,
+                'peer_reviewed_count': 0,
+                'total_sources': 1,
+                'quality_level': 'medium',
+                'tool': tool_name
+            }
+    
+    def filter_low_quality_sources(self, result: str, quality_assessment: Dict[str, Any]) -> str:
+        """
+        Filter or flag low-quality sources in academic mode.
+        
+        Args:
+            result: The tool result string
+            quality_assessment: Quality assessment from assess_source_quality
+        
+        Returns:
+            Filtered or annotated result string
+        """
+        # Get quality threshold from environment
+        quality_threshold = int(os.getenv("SOURCE_QUALITY_THRESHOLD", "7"))
+        
+        # If quality is below threshold, add warning
+        if quality_assessment['average_score'] < quality_threshold:
+            warning = (
+                f"\n\n⚠️  SOURCE QUALITY WARNING: "
+                f"Average quality score ({quality_assessment['average_score']}/10) "
+                f"is below threshold ({quality_threshold}/10). "
+                f"These sources may not meet academic standards. "
+                f"Consider using google_scholar tool for peer-reviewed sources."
+            )
+            return result + warning
+        
+        return result
+    
+    def suggest_scholar_search(self, tool_name: str, tool_args: dict) -> Optional[str]:
+        """
+        Suggest using Scholar tool instead of general search in academic mode.
+        
+        Args:
+            tool_name: Name of the tool being called
+            tool_args: Arguments for the tool
+        
+        Returns:
+            Suggestion message or None
+        """
+        # Check if in academic mode
+        academic_mode = os.getenv("GAZZALI_ACADEMIC_MODE", "false").lower() == "true"
+        scholar_priority = os.getenv("SCHOLAR_PRIORITY", "true").lower() == "true"
+        
+        if not (academic_mode and scholar_priority):
+            return None
+        
+        # If calling search tool, suggest Scholar instead
+        if tool_name == "search":
+            query = tool_args.get("query", "")
+            if query:
+                suggestion = (
+                    f"\n\n💡 ACADEMIC MODE SUGGESTION: "
+                    f"Consider using google_scholar tool instead of search for academic sources. "
+                    f"Scholar provides peer-reviewed papers with citation metadata. "
+                    f"Example: google_scholar(query=\"{query}\")"
+                )
+                return suggestion
+        
+        return None
+    
     def custom_call_tool(self, tool_name: str, tool_args: dict, **kwargs):
+        """
+        Execute tool call with academic mode enhancements.
+        
+        In academic mode:
+        - Prioritizes Scholar tool over general search
+        - Assesses source quality
+        - Filters low-quality sources
+        - Tracks quality metrics
+        
+        Args:
+            tool_name: Name of the tool to call
+            tool_args: Arguments for the tool
+            **kwargs: Additional arguments
+        
+        Returns:
+            Tool result string (potentially filtered/annotated)
+        """
         if tool_name in TOOL_MAP:
             tool_args["params"] = tool_args
+            
+            # Execute tool call
             if "python" in tool_name.lower():
                 result = TOOL_MAP['PythonInterpreter'].call(tool_args)
             elif tool_name == "parse_file":
@@ -412,6 +624,28 @@ class MultiTurnReactAgent(FnCallAgent):
             else:
                 raw_result = TOOL_MAP[tool_name].call(tool_args, **kwargs)
                 result = raw_result
+            
+            # Academic mode enhancements
+            academic_mode = os.getenv("GAZZALI_ACADEMIC_MODE", "false").lower() == "true"
+            
+            if academic_mode:
+                # Assess source quality
+                quality_assessment = self.assess_source_quality(tool_name, result)
+                
+                # Log quality metrics
+                print(f"📊 Source Quality Assessment:")
+                print(f"   Tool: {tool_name}")
+                print(f"   Quality Score: {quality_assessment['average_score']}/10 ({quality_assessment['quality_level']})")
+                print(f"   Peer-Reviewed Sources: {quality_assessment['peer_reviewed_count']}/{quality_assessment['total_sources']}")
+                
+                # Filter low-quality sources
+                result = self.filter_low_quality_sources(result, quality_assessment)
+                
+                # Add Scholar suggestion if appropriate
+                suggestion = self.suggest_scholar_search(tool_name, tool_args)
+                if suggestion:
+                    result = result + suggestion
+            
             return result
 
         else:
