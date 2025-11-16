@@ -216,12 +216,117 @@ Google Scholar search for 'machine learning healthcare' found 10 results:
 
 ## Integration with Citation Manager
 
+The Scholar tool is fully integrated with the Citation Manager to provide automatic citation tracking and bibliography generation. This integration happens transparently during searches.
+
+### Automatic Citation Tracking
+
 When the Citation Manager is available, the Scholar tool automatically:
 
-1. **Creates Citation Objects**: Converts search results to structured citations
-2. **Tracks Sources**: Maintains database of all consulted sources
-3. **Enables Bibliography Generation**: Citations can be formatted in APA, MLA, Chicago, or IEEE styles
-4. **Supports Export**: Citations can be exported to BibTeX or RIS formats
+1. **Creates Citation Objects**: Each search result is converted to a structured Citation object with full bibliographic metadata
+2. **Tracks All Sources**: Every paper found through Scholar searches is automatically added to the citation database
+3. **Deduplicates Citations**: The Citation Manager prevents duplicate entries based on title and authors
+4. **Preserves Metadata**: All extracted metadata (authors, year, venue, citation counts, abstracts, etc.) is stored
+
+### How It Works
+
+The integration occurs in the `google_scholar_with_serp` method:
+
+```python
+# For each search result
+for idx, page in enumerate(results.get("organic", []), 1):
+    # Extract comprehensive metadata
+    metadata = self._extract_metadata(page, idx)
+    
+    # Create citation if CitationManager available
+    if self.citation_manager and Citation:
+        citation = self._create_citation_from_result(metadata)
+        if citation:
+            # Automatically add to citation database
+            citation_id = self.citation_manager.add_citation(citation)
+```
+
+### Accessing Citations
+
+After running Scholar searches, you can access the tracked citations:
+
+```python
+# Get the citation manager from the Scholar tool
+citation_manager = scholar_tool.get_citation_manager()
+
+# Get statistics about tracked citations
+stats = citation_manager.get_statistics()
+print(f"Total citations tracked: {stats['total_citations']}")
+print(f"Open access papers: {stats['open_access_citations']}")
+
+# Generate bibliography in different styles
+apa_bibliography = citation_manager.generate_bibliography(CitationStyle.APA)
+mla_bibliography = citation_manager.generate_bibliography(CitationStyle.MLA)
+
+# Export to BibTeX for reference managers
+citation_manager.export_bibtex("my_research.bib")
+
+# Get inline citation for a specific paper
+citation_id = "smith_2020_abc123"  # From citation database
+inline = citation_manager.get_inline_citation(citation_id, CitationStyle.APA)
+# Returns: "(Smith, 2020)"
+```
+
+### Citation Metadata Captured
+
+For each Scholar result, the following metadata is automatically captured:
+
+- **Bibliographic Data**: Title, authors, year, venue, volume, issue, pages
+- **Identifiers**: DOI (when available), URL, PDF URL
+- **Metrics**: Citation count, highly-cited flag
+- **Content**: Abstract/snippet
+- **Classification**: Venue type (journal/conference/preprint), paper type (empirical/review/theoretical)
+- **Access**: Open access flag, PDF availability
+- **Methodology**: Identified research methods
+
+### Benefits of Integration
+
+1. **Automatic Bibliography**: No manual citation entry required
+2. **Consistent Formatting**: All citations formatted according to chosen style
+3. **Source Tracking**: Complete record of all consulted sources
+4. **Export Capability**: Easy export to reference managers (BibTeX, RIS)
+5. **Deduplication**: Prevents duplicate citations across multiple searches
+6. **Metadata Preservation**: Rich metadata available for analysis
+
+### Example Workflow
+
+```python
+# Initialize Scholar tool (Citation Manager created automatically)
+scholar = Scholar()
+
+# Run multiple searches - citations tracked automatically
+scholar.call({"query": "machine learning healthcare"})
+scholar.call({"query": "deep learning medical imaging"})
+scholar.call({"query": "AI diagnosis", "author": "Andrew Ng"})
+
+# Access citation manager
+cm = scholar.get_citation_manager()
+
+# Check what was found
+stats = cm.get_statistics()
+print(f"Tracked {stats['total_citations']} unique papers")
+print(f"Venue types: {stats['venue_type_counts']}")
+
+# Generate bibliography for your paper
+bibliography = cm.generate_bibliography(CitationStyle.APA, sort_by_author=True)
+print(bibliography)
+
+# Export for Zotero/Mendeley
+cm.export_bibtex("literature_review.bib")
+cm.export_ris("literature_review.ris")
+```
+
+### Requirements Addressed
+
+The Scholar-Citation Manager integration addresses:
+
+- **Requirement 1.3**: Extract and preserve bibliographic metadata from all sources
+- **Requirement 2.1**: Automatically capture citation information for every source consulted
+- **Requirement 14.2**: Extract citation counts, publication venues, and author information from Scholar results
 
 ## Best Practices
 
